@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Save-driven upgrade & build optimizer for Farmer Against Potatoes Idle. Import your save and get exact next-buy recommendations across every system, through the endgame.">
+<meta name="theme-color" content="#131019">
+<meta property="og:title" content="FAPI Upgrade Optimizer">
+<meta property="og:description" content="Import your Farmer Against Potatoes Idle save and get a best-route plan across every system.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A5%94%3C/text%3E%3C/svg%3E">
+<style>html{background:#131019}</style>
+<title>FAPI Upgrade Optimizer — Field Almanac</title>
+<style>
+  :root {
+    --soil:      #ece8f2;   /* light ink */
+    --soil-soft: #a49bb8;   /* secondary ink */
+    --kraft:     #131019;   /* app background */
+    --kraft-hi:  #1d1826;   /* panel / card */
+    --kraft-lo:  #282235;   /* raised / recessed */
+    --line:      #372f47;   /* borders */
+    --russet:    #c94fe0;   /* neon magenta (brand accent) */
+    --russet-dk: #b93ad2;
+    --leaf:      #42bb5d;   /* green (primary / good) */
+    --leaf-dk:   #2f9146;
+    --gold:      #fec837;   /* neon gold (current / highlight) */
+    --gold-soft: #332b12;   /* dark gold tint (hover fills) */
+    --done:      #6f8a5a;   /* completed muted green */
+    --shadow: rgba(0,0,0,.5);
+    --disp: "Arial Narrow","Roboto Condensed","Helvetica Neue",sans-serif;
+    --body: system-ui,"Segoe UI",Roboto,sans-serif;
+    --mono: "Consolas","SF Mono",ui-monospace,monospace;
+    --lime: #b8fd33; --blue: #2c90fc; --pink: #fd1892;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 12% -5%, rgba(201,79,224,.10), transparent 42%),
+      radial-gradient(circle at 100% 100%, rgba(66,187,93,.07), transparent 45%),
+      var(--kraft);
+    color: var(--soil);
+    font-family: var(--body);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 22px 20px 80px; }
+
+  /* ---- Stamped crate header ---- */
+  .masthead {
+    border: 3px solid var(--soil);
+    background:
+      repeating-linear-gradient(45deg, transparent 0 11px, rgba(43,32,24,.028) 11px 12px),
+      var(--kraft-hi);
+    box-shadow: 0 3px 0 var(--soil), 6px 8px 18px var(--shadow);
+    padding: 20px 22px;
+    position: relative;
+  }
+  .masthead::after {
+    content: ""; position: absolute; inset: 6px;
+    border: 1px solid var(--line); pointer-events: none;
+  }
+  .crest { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .emblem { flex: 0 0 auto; width: 60px; height: 60px; }
+  .titles { flex: 1 1 240px; min-width: 200px; }
+  .kicker {
+    font-family: var(--disp);
+    text-transform: uppercase; letter-spacing: .32em;
+    font-size: 13px; font-weight: 700; color: var(--russet);
+    margin: 0 0 2px;
+  }
+  h1 {
+    font-family: var(--disp);
+    text-transform: uppercase; letter-spacing: .02em;
+    font-weight: 700; font-size: clamp(28px, 6vw, 46px);
+    line-height: .95; margin: 0; color: var(--soil);
+    text-wrap: balance;
+  }
+  .sub { margin: 8px 0 0; font-size: 14px; color: var(--soil-soft); max-width: 62ch; }
+  .sub a { color: var(--russet-dk); text-underline-offset: 2px; }
+
+  .stamp {
+    flex: 0 0 auto; align-self: flex-start;
+    border: 2px solid var(--russet); color: var(--russet);
+    transform: rotate(-6deg);
+    font-family: var(--disp); text-transform: uppercase;
+    letter-spacing: .12em; font-weight: 700; font-size: 12px;
+    padding: 6px 10px; border-radius: 3px; text-align: center;
+    line-height: 1.1;
+  }
+
+  /* ---- Section frames ---- */
+  .panel {
+    background: var(--kraft-hi);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .panel-hd {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(var(--kraft-lo), var(--kraft-hi));
+  }
+  .panel-hd h2 {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .14em;
+    font-weight: 700; font-size: 17px; margin: 0; color: var(--soil);
+  }
+  .panel-hd .note { font-size: 12.5px; color: var(--soil-soft); margin-left: auto; }
+  .panel-bd { padding: 16px; }
+
+  /* ---- Controls ---- */
+  .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 640px){ .controls { grid-template-columns: 1fr; } }
+  .ctl-label {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .18em;
+    font-size: 12px; font-weight: 700; color: var(--soil-soft);
+    margin: 0 0 8px; display: block;
+  }
+  .seg { display: inline-flex; border: 2px solid var(--soil); background: var(--kraft); }
+  .seg button {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em;
+    font-weight: 700; font-size: 14px;
+    background: transparent; color: var(--soil-soft);
+    border: none; border-right: 2px solid var(--soil);
+    padding: 8px 16px; cursor: pointer; transition: background .12s, color .12s;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button[aria-pressed="true"] { background: var(--russet); color: var(--kraft-hi); }
+  .seg button:hover:not([aria-pressed="true"]) { background: var(--kraft-lo); }
+
+  .asc-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .asc-row.disabled { opacity: .4; pointer-events: none; }
+  .stepper { display: inline-flex; align-items: stretch; border: 2px solid var(--soil); }
+  .stepper button {
+    font-family: var(--disp); font-weight: 700; font-size: 20px; line-height: 1;
+    width: 40px; background: var(--kraft); color: var(--soil);
+    border: none; cursor: pointer;
+  }
+  .stepper button:hover { background: var(--gold-soft); }
+  .stepper button:first-child { border-right: 2px solid var(--soil); }
+  .stepper button:last-child { border-left: 2px solid var(--soil); }
+  .stepper input {
+    width: 68px; border: none; text-align: center;
+    font-family: var(--mono); font-size: 20px; font-weight: 700;
+    background: var(--kraft-hi); color: var(--soil);
+    -moz-appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .asc-hint { font-size: 12.5px; color: var(--soil-soft); font-style: italic; }
+
+  /* ---- Save import ---- */
+  .imp-intro { margin: 0 0 12px; font-size: 14px; color: var(--soil-soft); max-width: 70ch; }
+  .imp-intro code { font-family: var(--mono); font-size: 12.5px; background: var(--kraft); border: 1px solid var(--line); padding: 1px 5px; color: var(--russet-dk); }
+  .imp-intro .path { font-family: var(--mono); font-size: 11.5px; color: var(--soil); word-break: break-all; }
+  .save-text {
+    width: 100%; resize: vertical; min-height: 62px;
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.4;
+    border: 2px solid var(--soil); background: var(--kraft-hi); color: var(--soil);
+    padding: 10px 12px;
+  }
+  .save-text:focus-visible { outline: 3px solid var(--gold); outline-offset: 1px; }
+  .imp-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  .btn-primary {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; font-size: 14px;
+    background: var(--leaf); color: var(--kraft-hi); border: 2px solid var(--leaf-dk);
+    padding: 9px 20px; cursor: pointer; box-shadow: 2px 3px 0 var(--kraft-lo);
+  }
+  .btn-primary:hover { background: var(--leaf-dk); }
+  .btn-primary:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 var(--kraft-lo); }
+  .btn-file {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; font-size: 13px;
+    background: var(--kraft); color: var(--soil-soft); border: 2px solid var(--soil-soft);
+    padding: 8px 16px; cursor: pointer;
+  }
+  .btn-file:hover { background: var(--gold-soft); color: var(--soil); border-color: var(--soil); }
+  .imp-status { font-size: 13px; font-weight: 600; }
+  .imp-status.ok { color: var(--leaf-dk); }
+  .imp-status.err { color: var(--russet-dk); }
+  .imp-privacy { margin: 12px 0 0; font-size: 12px; color: var(--soil-soft); }
+  .detected { margin-top: 16px; padding-top: 14px; border-top: 1.5px dashed var(--line); }
+  .det-title {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .16em;
+    font-size: 12px; font-weight: 700; color: var(--soil-soft); margin: 0 0 10px;
+  }
+  .det-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(118px,1fr)); gap: 10px; }
+  .det-card { border: 2px solid var(--line); background: var(--kraft); padding: 9px 11px; }
+  .det-card .dl {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .09em;
+    font-size: 10.5px; font-weight: 700; color: var(--soil-soft); display: block;
+  }
+  .det-card .dv {
+    font-family: var(--mono); font-size: 19px; font-weight: 700; color: var(--soil);
+    font-variant-numeric: tabular-nums; margin-top: 3px; display: block;
+  }
+
+  /* ---- Phase timeline ---- */
+  .timeline { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; }
+  .phase-chip {
+    flex: 0 0 auto; min-width: 118px; text-align: left;
+    border: 2px solid var(--line); background: var(--kraft);
+    padding: 8px 11px 9px; cursor: pointer; position: relative;
+    transition: border-color .12s, transform .12s;
+  }
+  .phase-chip:hover { border-color: var(--soil-soft); }
+  .phase-chip[aria-selected="true"] { border-color: var(--soil); background: var(--kraft-hi); box-shadow: 2px 3px 0 var(--kraft-lo); }
+  .phase-chip .pn {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--russet);
+    letter-spacing: .04em;
+  }
+  .phase-chip .pt {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .04em;
+    font-weight: 700; font-size: 14px; line-height: 1.05; margin: 2px 0 3px; color: var(--soil);
+  }
+  .phase-chip .pr { font-size: 11px; color: var(--soil-soft); font-variant-numeric: tabular-nums; }
+  .youhere {
+    position: absolute; top: -9px; right: -6px;
+    background: var(--gold); color: var(--soil);
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .06em;
+    font-weight: 700; font-size: 9.5px; padding: 2px 6px;
+    border: 1.5px solid var(--soil); transform: rotate(4deg);
+    white-space: nowrap;
+  }
+  .mini-bar { height: 4px; background: var(--kraft-lo); margin-top: 6px; border: 1px solid var(--line); }
+  .mini-bar > i { display: block; height: 100%; background: var(--leaf); }
+
+  /* ---- Action ledger ---- */
+  .ledger-hd {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding-bottom: 12px; border-bottom: 1.5px dashed var(--line); margin-bottom: 4px;
+  }
+  .ledger-hd .lt {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .04em;
+    font-weight: 700; font-size: clamp(20px,3.4vw,28px); line-height: 1; margin: 0; color: var(--soil);
+  }
+  .ledger-hd .lr {
+    font-family: var(--mono); font-size: 13px; color: var(--kraft-hi);
+    background: var(--soil); padding: 3px 9px; font-variant-numeric: tabular-nums;
+  }
+  .prog { margin-left: auto; display: flex; align-items: center; gap: 9px; }
+  .prog .track { width: 120px; height: 9px; border: 1.5px solid var(--soil); background: var(--kraft); }
+  .prog .track > i { display: block; height: 100%; background: var(--leaf); transition: width .25s; }
+  .prog .pct { font-family: var(--mono); font-size: 13px; font-weight: 700; min-width: 38px; text-align: right; }
+
+  .focus-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 4px; }
+  .focus-tags .ft {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em;
+    font-size: 11px; font-weight: 700; color: var(--leaf-dk);
+    border: 1.5px solid var(--leaf); padding: 2px 8px; background: rgba(74,115,55,.08);
+  }
+
+  ol.actions { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: step; }
+  li.act {
+    display: grid; grid-template-columns: auto 1fr; gap: 12px;
+    padding: 12px 4px 12px 0; border-bottom: 1px solid var(--kraft-lo);
+    align-items: start;
+  }
+  li.act:last-child { border-bottom: none; }
+  .chk {
+    appearance: none; -webkit-appearance: none;
+    width: 24px; height: 24px; margin: 1px 0 0; flex: 0 0 auto;
+    border: 2px solid var(--soil); background: var(--kraft-hi);
+    cursor: pointer; position: relative; border-radius: 2px;
+  }
+  .chk:checked { background: var(--leaf); border-color: var(--leaf-dk); }
+  .chk:checked::after {
+    content: ""; position: absolute; left: 7px; top: 2px;
+    width: 6px; height: 12px; border: solid var(--kraft-hi);
+    border-width: 0 3px 3px 0; transform: rotate(42deg);
+  }
+  .chk:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .act-body .a-top { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .act-body .a-txt { font-size: 15.5px; font-weight: 600; color: var(--soil); }
+  .sys {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 10.5px; font-weight: 700; color: var(--russet-dk);
+    border: 1.5px solid var(--russet); padding: 1px 6px; white-space: nowrap;
+    background: rgba(166,83,46,.06);
+  }
+  .act-body .why { font-size: 13.5px; color: var(--soil-soft); margin: 4px 0 0; }
+  li.act.done .a-txt { text-decoration: line-through; color: var(--done); text-decoration-thickness: 2px; }
+  li.act.done .act-body { opacity: .6; }
+
+  .phase-note {
+    margin-top: 16px; padding: 11px 13px; background: rgba(208,151,27,.1);
+    border-left: 4px solid var(--gold); font-size: 13.5px; color: var(--soil-soft);
+  }
+  .phase-note strong { color: var(--soil); }
+
+  /* ---- Reference almanac ---- */
+  details.ref { border: 2px solid var(--soil); background: var(--kraft-hi); margin-top: 14px; box-shadow: 3px 4px 0 var(--kraft-lo); }
+  details.ref > summary {
+    list-style: none; cursor: pointer; padding: 12px 16px;
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .14em;
+    font-weight: 700; font-size: 15px; color: var(--soil);
+    display: flex; align-items: center; gap: 10px;
+    background: var(--kraft);
+  }
+  details.ref > summary::-webkit-details-marker { display: none; }
+  details.ref > summary::before {
+    content: "+"; font-family: var(--mono); font-size: 20px; color: var(--russet);
+    width: 16px; text-align: center; line-height: 1;
+  }
+  details.ref[open] > summary { border-bottom: 2px solid var(--soil); }
+  details.ref[open] > summary::before { content: "\2212"; }
+  .ref-bd { padding: 14px 16px; }
+  .ref-bd p { margin: 0 0 10px; font-size: 14px; }
+  .ord { margin: 0; padding-left: 4px; list-style: none; counter-reset: r; }
+  .ord li { position: relative; padding: 5px 0 5px 34px; border-bottom: 1px dotted var(--line); font-size: 14px; }
+  .ord li:last-child { border-bottom: none; }
+  .ord li::before {
+    counter-increment: r; content: counter(r);
+    position: absolute; left: 0; top: 5px;
+    font-family: var(--mono); font-weight: 700; font-size: 13px;
+    color: var(--kraft-hi); background: var(--russet);
+    width: 22px; height: 22px; display: grid; place-items: center;
+  }
+  .ord li b { color: var(--soil); }
+
+  .tbl-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  thead th {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em;
+    font-size: 12px; background: var(--kraft); color: var(--soil);
+  }
+  tbody th { font-family: var(--mono); font-weight: 700; background: var(--kraft-lo); white-space: nowrap; }
+  td .g { font-family: var(--mono); font-size: 12.5px; }
+
+  .rules { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .rules li { padding: 8px 11px; background: var(--kraft); border-left: 4px solid var(--leaf); font-size: 14px; }
+  .rules li b { color: var(--leaf-dk); }
+
+  /* ---- App shell: sidebar + main ---- */
+  .app { display: flex; min-height: 100vh; align-items: stretch; }
+  .sidebar {
+    flex: 0 0 236px; width: 236px; background: #100d16;
+    border-right: 1px solid var(--line); padding: 0 0 30px;
+    position: sticky; top: 0; align-self: flex-start; height: 100vh; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; padding: 18px 18px 16px; border-bottom: 1px solid var(--line); }
+  .brand svg { width: 40px; height: 40px; flex: 0 0 auto; }
+  .brand .bt { font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; line-height: .98; font-size: 18px; color: var(--soil); }
+  .brand .bt span { color: var(--russet); }
+  .nav { padding: 10px 10px 0; }
+  .nav-group { margin-bottom: 14px; }
+  .nav-label { font-family: var(--disp); text-transform: uppercase; letter-spacing: .18em; font-size: 10px; font-weight: 700; color: var(--soil-soft); padding: 0 8px 6px; }
+  .nav button {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: transparent; border: none; color: var(--soil-soft);
+    font-family: var(--body); font-size: 14px; font-weight: 600;
+    padding: 8px 10px; cursor: pointer; border-radius: 7px; border-left: 3px solid transparent;
+    transition: background .12s, color .12s;
+  }
+  .nav button .ic { width: 20px; text-align: center; font-size: 15px; filter: grayscale(.3); }
+  .nav button:hover { background: var(--kraft-lo); color: var(--soil); }
+  .nav button[aria-selected="true"] { background: var(--kraft-lo); color: var(--soil); border-left-color: var(--russet); }
+  .nav button.edge[aria-selected="true"] { border-left-color: var(--gold); }
+
+  .main { flex: 1 1 auto; min-width: 0; max-width: 1080px; margin: 0 auto; padding: 12px 24px 80px; width: 100%; }
+  .menu-toggle {
+    display: none; align-items: center; gap: 8px; margin: 8px 0 4px;
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; font-size: 13px;
+    background: var(--kraft-hi); color: var(--soil); border: 1px solid var(--line); border-radius: 7px; padding: 8px 14px; cursor: pointer;
+  }
+  .sec-head { margin: 6px 0 2px; }
+  .sec-head h1 { font-family: var(--disp); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; font-size: clamp(24px,4vw,34px); margin: 0; color: var(--soil); }
+  .sec-head p { margin: 5px 0 0; color: var(--soil-soft); font-size: 14px; max-width: 70ch; }
+  .sec-head .edgeflag { display: inline-block; font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; font-weight: 700; color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; padding: 2px 7px; margin-bottom: 8px; }
+
+  @media (max-width: 820px) {
+    .app { display: block; }
+    .sidebar { position: fixed; z-index: 40; left: 0; top: 0; height: 100vh; transform: translateX(-100%); transition: transform .2s; box-shadow: 8px 0 30px rgba(0,0,0,.6); }
+    .sidebar.open { transform: translateX(0); }
+    .main { max-width: 100%; padding: 8px 14px 70px; }
+    .menu-toggle { display: inline-flex; }
+  }
+
+  /* ---- Tabs ---- */
+  .tabbar { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 24px; border-bottom: 3px solid var(--soil); }
+  .tabbar button {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-weight: 700; font-size: 14px;
+    background: var(--kraft-lo); color: var(--soil-soft);
+    border: 2px solid var(--soil); border-bottom: none;
+    padding: 9px 17px; cursor: pointer; margin-bottom: -3px;
+  }
+  .tabbar button[aria-selected="true"] { background: var(--kraft-hi); color: var(--soil); border-bottom: 3px solid var(--kraft-hi); }
+  .tabbar button:hover:not([aria-selected="true"]) { background: var(--kraft); }
+  .tabpanel[hidden] { display: none; }
+  .empty-state { padding: 34px 18px; text-align: center; color: var(--soil-soft); font-size: 14px; border: 2px dashed var(--line); background: var(--kraft-hi); margin-top: 22px; line-height: 1.7; }
+  .sys-note { font-size: 12.5px; color: var(--soil-soft); font-style: italic; margin: 0 0 14px; max-width: 74ch; }
+  .sys-stat-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 16px; }
+  .sys-stat { border: 2px solid var(--line); background: var(--kraft); padding: 7px 13px; }
+  .sys-stat .l { font-family: var(--disp); text-transform: uppercase; letter-spacing: .09em; font-size: 10px; font-weight: 700; color: var(--soil-soft); display: block; }
+  .sys-stat .v { font-family: var(--mono); font-size: 17px; font-weight: 700; color: var(--soil); font-variant-numeric: tabular-nums; }
+  .rowlist { display: flex; flex-direction: column; gap: 6px; }
+  .rowitem { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 9px 13px; border: 1.5px solid var(--line); background: var(--kraft-hi); }
+  .rowitem .rk { font-family: var(--mono); font-weight: 700; font-size: 13px; color: var(--russet); min-width: 26px; }
+  .rowitem .nm { font-weight: 600; font-size: 14px; color: var(--soil); }
+  .rowitem .meta { font-size: 12px; color: var(--soil-soft); }
+  .rowitem .val { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; color: var(--soil); white-space: nowrap; }
+  .flag { font-family: var(--disp); text-transform: uppercase; letter-spacing: .05em; font-size: 9.5px; font-weight: 700; padding: 1px 6px; border: 1.5px solid; white-space: nowrap; }
+  .flag.good { color: var(--leaf-dk); border-color: var(--leaf); background: rgba(74,115,55,.08); }
+  .flag.warn { color: var(--russet-dk); border-color: var(--russet); background: rgba(166,83,46,.08); }
+  .flag.tip  { color: var(--gold); border-color: var(--gold); background: rgba(254,200,55,.14); }
+  .rec-box { padding: 11px 13px; background: rgba(74,115,55,.09); border-left: 4px solid var(--leaf); font-size: 13.5px; margin-bottom: 12px; }
+  .rec-box b { color: var(--leaf-dk); }
+  .sys-h { font-family: var(--disp); text-transform: uppercase; letter-spacing: .12em; font-size: 15px; font-weight: 700; color: var(--soil); margin: 20px 0 10px; }
+
+  /* ---- Cards Guide ---- */
+  .rank-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  @media (max-width: 620px) { .rank-cols { grid-template-columns: 1fr; } }
+  .rank-card { border: 1px solid var(--line); border-radius: 10px; background: var(--kraft-hi); overflow: hidden; }
+  .rank-card.primary { border-color: var(--leaf); }
+  .rank-card h4 { font-family: var(--disp); text-transform: uppercase; letter-spacing: .12em; font-size: 13px; margin: 0; padding: 10px 13px; border-bottom: 1px solid var(--line); background: var(--kraft-lo); color: var(--soil); display: flex; justify-content: space-between; }
+  .rank-card h4 span { color: var(--soil-soft); font-size: 11px; letter-spacing: .06em; }
+  .rank-row { display: flex; align-items: center; gap: 10px; padding: 8px 13px; border-bottom: 1px solid var(--kraft-lo); }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-row .rnum { font-family: var(--mono); font-weight: 700; color: var(--russet); width: 18px; text-align: center; }
+  .rank-row .rname { flex: 1; font-weight: 600; font-size: 14px; color: var(--soil); }
+  .rank-row .rval { font-family: var(--mono); font-size: 12.5px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 8px; margin-top: 10px; }
+  .ctile { border: 1px solid var(--line); border-radius: 8px; background: var(--kraft-hi); padding: 9px 11px; position: relative; }
+  .ctile.top { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(254,200,55,.25); }
+  .ctile .cn { font-weight: 700; font-size: 13.5px; color: var(--soil); }
+  .ctile .cb { font-family: var(--mono); font-size: 11px; color: var(--soil-soft); margin-top: 4px; }
+  .ctile .cg { font-family: var(--mono); font-size: 12px; color: var(--leaf); font-weight: 700; }
+  .ctile .cl { font-size: 10.5px; color: var(--soil-soft); margin-top: 2px; }
+
+  /* ---- Pet Bonus Finder ---- */
+  .bonus-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 10px; }
+  .bonus-find { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--kraft-hi); }
+  .bonus-find .bf-head { font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em; font-size: 12.5px; padding: 8px 12px; background: var(--kraft-lo); color: var(--soil); display: flex; justify-content: space-between; align-items: center; }
+  .bonus-find .bf-head span { color: var(--gold); font-size: 11px; font-family: var(--mono); }
+  .ptype { font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; margin-right: 5px; }
+  .ptype.g { color: var(--lime); border: 1px solid var(--lime); }
+  .ptype.a { color: var(--blue); border: 1px solid var(--blue); }
+  .team-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 9px 13px; border: 1px solid var(--line); border-radius: 8px; background: var(--kraft-hi); margin-bottom: 6px; }
+  .team-row .tinfo { min-width: 0; }
+  .team-row .tnames { display: flex; flex-wrap: wrap; gap: 5px 10px; font-size: 13px; color: var(--soil); }
+  .team-row .tnames .pn { white-space: nowrap; }
+  .team-row .texp { font-size: 11.5px; color: var(--soil-soft); margin-top: 4px; }
+  .team-row .rval { font-family: var(--mono); font-size: 12.5px; color: var(--gold); font-variant-numeric: tabular-nums; }
+
+  /* ---- Best Route dashboard ---- */
+  .route-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--kraft-hi); margin-bottom: 8px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; width: 100%; font-family: var(--body); }
+  .route-item:hover { border-color: var(--russet); background: var(--kraft-lo); }
+  .route-item .ric { font-size: 22px; width: 30px; text-align: center; }
+  .route-item .rmain { min-width: 0; }
+  .route-item .rtitle { font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--soil-soft); }
+  .route-item .rwhat { font-size: 15px; font-weight: 600; color: var(--soil); margin-top: 2px; }
+  .route-item .rwhy { font-size: 12.5px; color: var(--soil-soft); margin-top: 2px; }
+  .route-item .rgo { font-family: var(--disp); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 700; color: var(--russet); white-space: nowrap; }
+  .route-item.hot { border-color: var(--gold); }
+  .route-item.hot .rtitle { color: var(--gold); }
+
+  /* ---- Footer ---- */
+  .foot { margin-top: 26px; padding-top: 16px; border-top: 2px solid var(--line); font-size: 12.5px; color: var(--soil-soft); }
+  .foot h3 { font-family: var(--disp); text-transform: uppercase; letter-spacing: .14em; font-size: 13px; margin: 0 0 6px; color: var(--soil); }
+  .foot a { color: var(--russet-dk); }
+  .foot ul { margin: 4px 0 12px; padding-left: 18px; }
+  .reset-btn {
+    font-family: var(--disp); text-transform: uppercase; letter-spacing: .1em; font-weight: 700;
+    font-size: 12px; background: var(--kraft); border: 2px solid var(--soil-soft);
+    color: var(--soil-soft); padding: 6px 12px; cursor: pointer; margin-top: 4px;
+  }
+  .reset-btn:hover { background: var(--russet); color: var(--kraft-hi); border-color: var(--russet); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 60 60" aria-hidden="true">
+        <ellipse cx="30" cy="36" rx="19" ry="16" fill="#b06a3a" stroke="#ece8f2" stroke-width="2.5"/>
+        <ellipse cx="23" cy="31" rx="2.4" ry="1.6" fill="#7a4423"/>
+        <ellipse cx="36" cy="40" rx="2.1" ry="1.4" fill="#7a4423"/>
+        <path d="M30 20 L30 4 M24 12 L30 6 L36 12" fill="none" stroke="#ece8f2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14 22 q4 -9 16 -9 q12 0 16 9" fill="none" stroke="#42bb5d" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <div class="bt">Potato War<br><span>Optimizer</span></div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Sections">
+      <div class="nav-group">
+        <div class="nav-label">Start</div>
+        <button data-tab="home" aria-selected="true" type="button"><span class="ic">🏠</span>Home &amp; import</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Plan · mid→endgame</div>
+        <button data-tab="roadmap" class="edge" aria-selected="false" type="button"><span class="ic">🗺️</span>Roadmap</button>
+        <button data-tab="portal" class="edge" aria-selected="false" type="button"><span class="ic">🌀</span>Portal</button>
+        <button data-tab="seedshop" class="edge" aria-selected="false" type="button"><span class="ic">🌱</span>Seed Shop</button>
+        <button data-tab="sweetpotato" class="edge" aria-selected="false" type="button"><span class="ic">🍠</span>Sweet Potato</button>
+        <button data-tab="transcendence" class="edge" aria-selected="false" type="button"><span class="ic">✨</span>Transcendence</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Systems</div>
+        <button data-tab="expeditions" aria-selected="false" type="button"><span class="ic">🧭</span>Expeditions</button>
+        <button data-tab="pets" aria-selected="false" type="button"><span class="ic">🐾</span>Pets &amp; teams</button>
+        <button data-tab="cards" aria-selected="false" type="button"><span class="ic">🃏</span>Cards</button>
+        <button data-tab="perks" aria-selected="false" type="button"><span class="ic">💀</span>Perks (combat)</button>
+        <button data-tab="talents" aria-selected="false" type="button"><span class="ic">🌿</span>Talents</button>
+        <button data-tab="buildings" aria-selected="false" type="button"><span class="ic">🏛️</span>Buildings</button>
+        <button data-tab="protein" aria-selected="false" type="button"><span class="ic">🥩</span>Protein</button>
+        <button data-tab="outposts" aria-selected="false" type="button"><span class="ic">⛏️</span>Outposts</button>
+        <button data-tab="residue" aria-selected="false" type="button"><span class="ic">🥛</span>Residue &amp; cows</button>
+        <button data-tab="infinity" aria-selected="false" type="button"><span class="ic">♾️</span>Infinity Corner</button>
+        <button data-tab="equipment" aria-selected="false" type="button"><span class="ic">⚔️</span>Equipment</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Info</div>
+        <button data-tab="reference" aria-selected="false" type="button"><span class="ic">📖</span>Guides</button>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <button class="menu-toggle" id="menuToggle" type="button">☰ Sections</button>
+
+  <!-- HOME -->
+  <div class="tabpanel" id="tab-home">
+    <div class="sec-head">
+      <h1>Potato War Optimizer</h1>
+      <p>A save-driven companion for <em>Farmer Against Potatoes Idle</em>, modeled on <a href="https://www.gameplayplanner.com" target="_blank" rel="noopener">gameplayplanner</a> — extended through the mid-game and the Transcendence endgame it doesn't cover. Import your save, then use the sections on the left.</p>
+    </div>
+    <section class="panel">
+      <div class="panel-hd"><h2>Import your save</h2><span class="note">auto-detects everything</span></div>
+      <div class="panel-bd">
+        <p class="imp-intro">In-game, open the code box and enter <code>copysave</code> — it copies your whole save to the clipboard. Paste it below and hit <b>Read save</b>. Or upload your <code>fapi-save.txt</code> from <span class="path">…/AppData/LocalLow/Oni Gaming/Farmer Against Potatoes Idle</span>.</p>
+        <textarea id="saveText" class="save-text" rows="3" placeholder="Paste your copysave string here…" spellcheck="false"></textarea>
+        <div class="imp-actions">
+          <button id="readBtn" class="btn-primary" type="button">Read save</button>
+          <label class="btn-file">Upload file<input id="saveFile" type="file" accept=".txt,.dat,.sav,.json,.save,application/octet-stream" hidden></label>
+          <span id="impStatus" class="imp-status" role="status" aria-live="polite"></span>
+        </div>
+        <p class="imp-privacy">🔒 Parsed entirely in your browser — your save never leaves your device.</p>
+        <div id="detected" class="detected" hidden></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-hd"><h2>Your best route</h2><span class="note">do these in order · tap to open</span></div>
+      <div class="panel-bd" id="routeBody"></div>
+    </section>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="tabpanel" id="tab-roadmap" hidden>
+    <div class="sec-head"><span class="edgeflag">Mid → Endgame</span><h1>Roadmap</h1><p>Your current phase and the prioritized "do this next" plan — the whole-game guide gameplayplanner lacks.</p></div>
+
+  <!-- LIVE, SAVE-DRIVEN BUY LIST -->
+  <section class="panel">
+    <div class="panel-hd"><h2>⚡ Do this now — from your save</h2><span class="note">Specific buys the optimizer picked · tap to open</span></div>
+    <div class="panel-bd" id="liveActionsBody"><p class="sys-note">Import your save on the Home tab and your exact next purchases appear here — named upgrades, buildings, cards, and lines pulled from every system.</p></div>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="panel">
+    <div class="panel-hd"><h2>Where are you?</h2><span class="note">Auto-filled from your save · edit anytime</span></div>
+    <div class="panel-bd">
+      <div class="controls">
+        <div>
+          <span class="ctl-label">Tier</span>
+          <div class="seg" id="tierSeg" role="group" aria-label="Tier">
+            <button data-tier="T1" aria-pressed="true">T1</button>
+            <button data-tier="T2" aria-pressed="false">T2 · Ascension</button>
+            <button data-tier="T3" aria-pressed="false">T3 · Transcend</button>
+          </div>
+        </div>
+        <div>
+          <span class="ctl-label">Ascension #</span>
+          <div class="asc-row" id="ascRow">
+            <div class="stepper">
+              <button id="ascDown" aria-label="Lower ascension">&minus;</button>
+              <input id="ascInput" type="number" min="1" max="120" value="1" inputmode="numeric" aria-label="Ascension number">
+              <button id="ascUp" aria-label="Raise ascension">+</button>
+            </div>
+            <span class="asc-hint" id="ascHint">How many times you've Ascended.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TIMELINE -->
+  <section class="panel">
+    <div class="panel-hd"><h2>Progression map</h2><span class="note">Tap any stage to view its plan</span></div>
+    <div class="panel-bd" style="padding-bottom:8px;">
+      <div class="timeline" id="timeline"></div>
+    </div>
+  </section>
+
+  <!-- LEDGER -->
+  <section class="panel">
+    <div class="panel-hd"><h2>Do this next</h2><span class="note">Ordered by priority · check items off</span></div>
+    <div class="panel-bd">
+      <div class="ledger-hd">
+        <h3 class="lt" id="ledTitle">—</h3>
+        <span class="lr" id="ledRange">—</span>
+        <div class="prog">
+          <div class="track"><i id="progFill" style="width:0%"></i></div>
+          <span class="pct" id="progPct">0%</span>
+        </div>
+      </div>
+      <div class="focus-tags" id="focusTags"></div>
+      <ol class="actions" id="actions"></ol>
+      <div class="phase-note" id="phaseNote" hidden></div>
+    </div>
+  </section>
+
+  </div><!-- /ROADMAP -->
+
+  <!-- REFERENCE -->
+  <div class="tabpanel" id="tab-reference" hidden>
+    <div class="sec-head"><h1>Guides &amp; reference</h1><p>The evergreen priority orders — classes, gems, seed shop, farming.</p></div>
+  <section class="panel">
+    <div class="panel-hd"><h2>Reference almanac</h2><span class="note">The evergreen priority orders</span></div>
+    <div class="panel-bd" style="padding-top:8px;">
+
+      <details class="ref" open>
+        <summary>Seed Shop — buy order</summary>
+        <div class="ref-bd">
+          <p>The Seed Shop is a major T3 lever. Community-recommended purchase order:</p>
+          <ol class="ord">
+            <li><b>Auto-seed system</b> — automate seeding first; everything downstream leans on it.</li>
+            <li><b>Item Rarity (HS)</b> — big multiplier on gear quality.</li>
+            <li><b>Subclass EXP</b> &amp; <b>Portal HP–ATK reduction</b> — speeds portal pushing.</li>
+            <li><b>Bonus Seeds</b> — worth it once it's ~0.5&times; your manual seeds.</li>
+            <li><b>Portal HP reduction</b> &rarr; <b>Global Bonus</b> &rarr; <b>Subclass bonuses</b> &rarr; <b>SWP / SKP upgrades</b>.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="ref">
+        <summary>Classes &amp; talent order</summary>
+        <div class="ref-bd">
+          <p>All <b>7 classes</b> — Farmer, Hoer, Smasher, Digger, Rancher, Harvester, Freeloader. Levels in <em>every</em> class grant talent points for your <em>current</em> class, so <b>level them in parallel</b>. You gain a talent point per 10 levels, plus a permanent +1 the first time each class crosses a multiple of 100 (re-granted every Reincarnation).</p>
+          <ul class="rules">
+            <li><b>Talent tree order:</b> Freeloader first (raises equipment levels), then <b>Smasher &gt; Hoer &gt; Farmer &gt; Freeloader</b>.</li>
+            <li><b>Keystone rotation:</b> Harvester (worm find), Rancher (+milk), Freeloader (protein / equipment).</li>
+            <li><b>A55+ role split:</b> Digger &rarr; Seed Shop / mining · Farmer &rarr; gem farming · Rancher &rarr; world stages · Freeloader &rarr; Protein.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="ref">
+        <summary>Gem / jewel loadouts by stage</summary>
+        <div class="ref-bd">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>Stage</th><th>Loadout</th></tr></thead>
+              <tbody>
+                <tr><th>A20–A54</th><td class="g">PD · Cpow · Expedition Token · Protein → SWP</td></tr>
+                <tr><th>A55–A65 · Portal</th><td class="g">PD · Expedition Token · Seed · Subclass EXP</td></tr>
+                <tr><th>A55–A65 · Expeditions</th><td class="g">SWP · SKP · Expedition Token · Pet Rank</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:10px;font-size:12.5px;font-style:italic;">Defer the final 5-slot jewel upgrades in late game — minimal impact for the cost.</p>
+        </div>
+      </details>
+
+      <details class="ref">
+        <summary>Farming — quick rules</summary>
+        <div class="ref-bd">
+          <ul class="rules">
+            <li><b>Auto-plot first.</b> It takes precedence over every other French Fry Corner upgrade.</li>
+            <li><b>Extra starting plot</b> only once it costs under 10% of a run's fry.</li>
+            <li><b>PIC upgrades</b> right before a farm reset, and after the first harvests of a newly-unlocked plant.</li>
+            <li><b>Reset</b> at ~10&times; fry earned, or when meaningful page-4 upgrades are in reach. Avoid runs over ~5 days until late game.</li>
+            <li><b>Contagion:</b> funnel grasshoppers into FRY near reset; otherwise spread evenly.</li>
+            <li><b>AFK</b> = plant one of each crop; <b>active</b> = plant only your highest tier, then rotate down.</li>
+          </ul>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  </div><!-- /REFERENCE -->
+
+  <!-- ENDGAME SECTIONS (the gap gameplayplanner doesn't cover) -->
+  <div class="tabpanel" id="tab-portal" hidden>
+    <div class="sec-head"><span class="edgeflag">Mid → Endgame</span><h1>Portal</h1><p>Your main multiplier engine from mid-game on. Push the floor and feed the portal shop.</p></div>
+    <section class="panel"><div class="panel-bd" id="portalBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-seedshop" hidden>
+    <div class="sec-head"><span class="edgeflag">Mid → Endgame</span><h1>Seed Shop</h1><p>A major endgame lever — spend seed points in the right order.</p></div>
+    <section class="panel"><div class="panel-bd" id="seedBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-sweetpotato" hidden>
+    <div class="sec-head"><span class="edgeflag">Prestige</span><h1>Sweet Potato shop</h1><p>Permanent prestige upgrades — including the two that directly speed your Ascension.</p></div>
+    <section class="panel"><div class="panel-bd" id="spBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-transcendence" hidden>
+    <div class="sec-head"><span class="edgeflag">Endgame</span><h1>Transcendence &amp; Souls</h1><p>The T3 prestige and the Soul economy that powers it.</p></div>
+    <section class="panel"><div class="panel-bd" id="transBody"></div></section>
+  </div>
+
+  <!-- SYSTEM SECTIONS -->
+  <div class="tabpanel" id="tab-expeditions" hidden>
+    <div class="sec-head"><h1>Expeditions</h1><p>Reward-priority calculator, team power, and idle / auto-restart checks.</p></div>
+    <section class="panel"><div class="panel-bd" id="expBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-pets" hidden>
+    <div class="sec-head"><h1>Pets &amp; teams</h1><p>Your strongest Ground / Air pets, what they buff, and where to catch them.</p></div>
+    <section class="panel"><div class="panel-bd" id="petsBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-cards" hidden>
+    <div class="sec-head"><h1>Cards</h1><p>Charge status and your cards ranked by power.</p></div>
+    <section class="panel"><div class="panel-bd" id="cardsBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-perks" hidden>
+    <div class="sec-head"><span class="edgeflag">Core damage</span><h1>Perks (Skull shop)</h1><p>Permanent combat upgrades — your core damage engine that drives ascension.</p></div>
+    <section class="panel"><div class="panel-bd" id="perkBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-talents" hidden>
+    <div class="sec-head"><span class="edgeflag">Core damage</span><h1>Talents</h1><p>The class talent tree — with the reincarnation nodes that directly speed Ascension.</p></div>
+    <section class="panel"><div class="panel-bd" id="talentBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-buildings" hidden>
+    <div class="sec-head"><h1>Buildings &amp; town</h1><p>All 17 buildings by name, what they boost, and cap status.</p></div>
+    <section class="panel"><div class="panel-bd" id="bldBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-protein" hidden>
+    <div class="sec-head"><h1>Protein &amp; assembly</h1><p>Assembly lines and which are below max.</p></div>
+    <section class="panel"><div class="panel-bd" id="proteinBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-outposts" hidden>
+    <div class="sec-head"><h1>Outposts &amp; mining</h1><p>Miners, outpost capacity, and town renown.</p></div>
+    <section class="panel"><div class="panel-bd" id="outpostBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-residue" hidden>
+    <div class="sec-head"><h1>Residue &amp; cows</h1><p>Milk / residue scaling and your Cow Shop upgrades.</p></div>
+    <section class="panel"><div class="panel-bd" id="residueBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-infinity" hidden>
+    <div class="sec-head"><h1>Infinity Corner</h1><p>Your permanent Reincarnation-Point (REP) upgrades.</p></div>
+    <section class="panel"><div class="panel-bd" id="infinityBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-equipment" hidden>
+    <div class="sec-head"><h1>Equipment</h1><p>Equipped gear and inventory items that outrate them.</p></div>
+    <section class="panel"><div class="panel-bd" id="eqBody"></div></section>
+  </div>
+
+  <footer class="foot">
+    <h3>On the numbers</h3>
+    <p>Your <b>Detected</b> stats and every per-system table are read straight from your save (names pulled from the game's own data). The <b>roadmap</b> is assembled from community guides (the T3 Transcendence guide, the FAPI Fandom wiki, and gameplayplanner's farming guide) — FAPI updates often, so treat thresholds as <em>strong guidance, not gospel</em>. Exact expedition/farming yield math still lives at <a href="https://www.gameplayplanner.com" target="_blank" rel="noopener">gameplayplanner</a>.</p>
+    <h3>Sources</h3>
+    <ul>
+      <li><a href="https://note.com/honest_zephyr964/n/n5698e59a02b2?hl=en" target="_blank" rel="noopener">FAPI T3 (Transcendence) endgame guide</a></li>
+      <li><a href="https://farmer-against-potatoes-idle.fandom.com/wiki/Classes" target="_blank" rel="noopener">FAPI Wiki — Classes &amp; Talent Tree</a></li>
+      <li><a href="https://www.gameplayplanner.com" target="_blank" rel="noopener">gameplayplanner — the tool this one is modeled on</a></li>
+    </ul>
+    <button class="reset-btn" id="resetBtn">Reset my saved progress</button>
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- Phase data (ordered) ----
+  var PHASES = [
+    {
+      key: "t1-start", tier: "T1", label: "First Season", range: "T1 · classes online",
+      focus: ["Classes", "Farming", "Talents"],
+      actions: [
+        { t: "Level all classes in parallel", sys: "Classes", why: "Levels in every class grant talent points for your current class — parallel leveling compounds fastest. Keep them roughly in range of each other." },
+        { t: "Buy the Auto-plot before anything else", sys: "Farming", why: "The auto plot takes precedence over every other French Fry Corner upgrade. Automate harvesting first." },
+        { t: "Spend early talents toward Freeloader", sys: "Talents", why: "Freeloader's nodes raise equipment levels, which lifts your whole account." },
+        { t: "Grab the extra starting plot when it's <10% of a run's fry", sys: "Farming", why: "Cheap capacity, but only once it's a small fraction of what a run earns." },
+        { t: "Do your first Reincarnation once talent gains slow", sys: "Prestige", why: "You bank a permanent +1 talent point the first time each class crosses a 100-level milestone, then restart faster." }
+      ]
+    },
+    {
+      key: "t1-loop", tier: "T1", label: "Reincarnation Loop", range: "T1 · toward Ascension",
+      focus: ["Talents", "Farming", "Prestige"],
+      actions: [
+        { t: "Keep all classes leveling in parallel each run", sys: "Classes", why: "Every 100-level milestone per class is a permanent talent point re-granted each reincarnation." },
+        { t: "Follow talent order: Smasher → Hoer → Farmer → Freeloader", sys: "Talents", why: "After Freeloader's equipment nodes, this gives the strongest talent-tree progression." },
+        { t: "Buy PIC upgrades right before a farm reset", sys: "Farming", why: "Permanent Improvement Corner bonuses are best locked in just before resetting, and after first harvests of a new plant." },
+        { t: "Reset the farm at ~10× fry, or for meaningful page-4 upgrades", sys: "Farming", why: "That's the sweet spot where a reset pays for itself quickly." },
+        { t: "Push to 10 Prestiges to unlock Ascension", sys: "Prestige", why: "Ascension is a second prestige layer with far bigger permanent multipliers — it opens after 10 prestiges." }
+      ]
+    },
+    {
+      key: "t2", tier: "T2", ascMin: 1, ascMax: 6, label: "Ascension Opens", range: "T2 · A1–A6",
+      focus: ["Ascension", "RP", "Challenges"],
+      actions: [
+        { t: "Buy cows after each Ascension", sys: "Residue", why: "Milk/residue scaling is a core account-wide multiplier — refresh cows every ascension." },
+        { t: "Work through Reincarnation Point (RP) upgrades", sys: "RP", why: "RP upgrades are permanent power you carry into Transcendence." },
+        { t: "Clear the early Challenges (C1–C7)", sys: "Challenges", why: "Each challenge unlocks lasting bonuses and gates later content." },
+        { t: "Rotate Harvester / Rancher / Freeloader for their keystones", sys: "Classes", why: "Harvester boosts worm find, Rancher gives +milk nodes, Freeloader boosts equipment/protein." },
+        { t: "Keep pushing world stages and class levels toward Transcendence", sys: "Progression", why: "Transcendence (T3) is the next tier — build the raw stats to reach it." }
+      ]
+    },
+    {
+      key: "t2-deep", tier: "T2", ascMin: 7, ascMax: 999, label: "Deep Ascension", range: "T2 · A7+ · pre-Transcendence",
+      focus: ["Portal", "Seed Shop", "Toward Transcendence"],
+      actions: [
+        { t: "Push your Portal floor — it's your main multiplier engine", sys: "Portal", why: "Portals drive seed income and the bulk of your late-T2 power. Keep auto-floor climbing and keep buying portal-shop levels." },
+        { t: "Follow the Seed Shop buy order (auto-seed → item rarity → …)", sys: "Seed Shop", why: "See the reference below: auto-seed first, then Item Rarity, then subclass EXP / portal HP–ATK reductions." },
+        { t: "Buy cows after every Ascension", sys: "Residue", why: "Milk/residue scaling is a core account-wide multiplier — refresh cows each ascension." },
+        { t: "Keep all 10 Challenges perma-cleared", sys: "Challenges", why: "Challenge perma-clears are permanent power — make sure none lapse." },
+        { t: "Bank Reincarnation Points and buy RP upgrades", sys: "RP", why: "RP upgrades are permanent and carry through Transcendence." },
+        { t: "Run long expeditions for tokens and gems", sys: "Expeditions", why: "Expedition tokens and gems fuel the next tier — keep long runs going." },
+        { t: "Build toward unlocking Transcendence (the Soul layer)", sys: "Transcendence", why: "Transcendence is your next big prestige — it unlocks Souls and the Soul shop, and opens the T3 roadmap." }
+      ]
+    },
+    {
+      key: "t3-early", tier: "T3", ascMin: 7, ascMax: 19, label: "Early Transcend", range: "T3 · A7–A19",
+      focus: ["Class rotation", "Rift of Legends", "World stages"],
+      actions: [
+        { t: "Max class rotation — ~1 minute per class", sys: "Classes", why: "Use class-experience gems and pets to blitz each class, banking talent points fast." },
+        { t: "Run 15-minute Rift of Legends (RL) cycles", sys: "Rift", why: "Short RL runs are the efficient cadence at this stage." },
+        { t: "Unlock all RP Page 2 upgrades", sys: "RP", why: "Page 2 opens the next band of permanent multipliers." },
+        { t: "Clear Challenges C8 → C9 → C10", sys: "Challenges", why: "The C8–C10 tier gates T3 power spikes." },
+        { t: "Advance world 3-9 → 4-9 → 5-9 → 6-9 (200+ waves) → 7-6 → 7-9", sys: "World", why: "Steady world-stage climb; 6-9 wants 200+ waves before you push to 7." },
+        { t: "Buy cows after each Ascension; manage manual residue & RP", sys: "Residue", why: "Keep residue and RP consumption balanced so nothing stalls." }
+      ]
+    },
+    {
+      key: "t3-portal", tier: "T3", ascMin: 20, ascMax: 29, label: "Portal Ramp", range: "T3 · A20–A29",
+      focus: ["Portal", "Seed Shop", "Gems"],
+      actions: [
+        { t: "Reach class level 4250 in portals", sys: "Portal", why: "This is the class-level target that unlocks efficient portal pushing." },
+        { t: "Buy Item Rarity from the Seed Shop", sys: "Seed Shop", why: "Item Rarity is a large, permanent gear-quality multiplier — grab it early." },
+        { t: "Farm SWP gems in 7-9 Eternal", sys: "Gems", why: "7-9 Eternal is the efficient SWP-gem farm at this stage." },
+        { t: "Level Farmer & Freeloader subclasses to 750", sys: "Subclass", why: "Subclass 750 unlocks efficient talent rotation." },
+        { t: "Run gem loadout: PD · Cpow · Expedition Token · Protein", sys: "Gems", why: "This is the recommended A20–A29 jewel setup." }
+      ]
+    },
+    {
+      key: "t3-swp", tier: "T3", ascMin: 30, ascMax: 54, label: "SWP & Expeditions", range: "T3 · A30–A54",
+      focus: ["Portal", "Expeditions", "Gems"],
+      actions: [
+        { t: "Bank 250 SWP gems before advancing portals", sys: "Gems", why: "Stockpile SWP first so each portal advance lands with full value." },
+        { t: "Switch to long 12-hour manual expeditions", sys: "Expeditions", why: "Longer expeditions become the efficient cadence here." },
+        { t: "Make portal progression your top priority", sys: "Portal", why: "Portals now drive the bulk of your multipliers." },
+        { t: "Run gem loadout: PD · Cpow · Expedition Token · SWP", sys: "Gems", why: "Swap Protein out for SWP versus the previous phase." }
+      ]
+    },
+    {
+      key: "t3-late", tier: "T3", ascMin: 55, ascMax: 65, label: "Late Portal Push", range: "T3 · A55–A65",
+      focus: ["Portal", "Seed Shop", "Expeditions"],
+      actions: [
+        { t: "Keep 12-hour expeditions; swap Butternut Forest → Lemon at A55", sys: "Expeditions", why: "Lemon overtakes Butternut Forest in value from A55 on." },
+        { t: "Prioritize portal progression over world farming", sys: "Portal", why: "World farming falls off relative to portal gains at this depth." },
+        { t: "Buy essential Seed Shop upgrades, then level all classes to 3500", sys: "Seed Shop", why: "Lock the key Seed Shop nodes first; then the 3500 class target." },
+        { t: "Defer the final 5-slot jewel upgrades", sys: "Jewels", why: "Minimal impact for the cost — skip until much later." },
+        { t: "Portal gems: PD · Expedition Token · Seed · Subclass EXP", sys: "Gems", why: "Use this loadout while actively pushing portals." },
+        { t: "Expedition gems: SWP · SKP · Expedition Token · Pet Rank", sys: "Gems", why: "Swap to this loadout while running expeditions." }
+      ]
+    },
+    {
+      key: "t3-end", tier: "T3", ascMin: 66, ascMax: 999, label: "Endgame Reincarnation", range: "T3 · A66–A71+",
+      focus: ["Gems", "Reincarnation", "Targets"],
+      actions: [
+        { t: "Collect additional SWP and SKP gems", sys: "Gems", why: "The final push is gated on SWP/SKP reduction levels." },
+        { t: "At A70 (Clover / SWP / SKP at Lv12), do one Reincarnation", sys: "Prestige", why: "A single well-timed reincarnation here resets the layer with maximal carryover." },
+        { t: "Aim for completion targets: SWP Reduction ~111 · SKP Reduction ~69 · RL ~19.4M", sys: "Targets", why: "These are the estimated thresholds for finishing the current endgame content." }
+      ]
+    }
+  ];
+
+  // ---- State ----
+  var STORE = "fapi-planner-v1";
+  var state = { tier: "T1", asc: 1, reinc: 0, selected: "t1-start", done: {}, detected: null, tab: "home" };
+  var PARSED = null; // full parsed save object, when imported
+  var LAST = {};     // top recommendation from each system, for the Best Route dashboard
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && typeof s === "object") {
+          state.tier = s.tier || state.tier;
+          state.asc = s.asc || state.asc;
+          state.reinc = s.reinc || 0;
+          state.done = s.done || {};
+          state.detected = s.detected || null;
+          state.tab = s.tab || "home";
+        }
+      }
+    } catch (e) { /* storage unavailable — run in-memory */ }
+    try { var rawSave = localStorage.getItem("fapi-save-json"); if (rawSave) PARSED = JSON.parse(rawSave); } catch (e) { PARSED = null; }
+  }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function phaseByKey(k) {
+    for (var i = 0; i < PHASES.length; i++) if (PHASES[i].key === k) return PHASES[i];
+    return PHASES[0];
+  }
+
+  // Which phase does the current tier + ascension recommend?
+  function recommendedKey() {
+    if (state.tier === "T1") return (state.reinc >= 1) ? "t1-loop" : "t1-start";
+    if (state.tier === "T2") return (state.asc >= 7) ? "t2-deep" : "t2";
+    // T3 — pick by ascension
+    for (var i = 0; i < PHASES.length; i++) {
+      var p = PHASES[i];
+      if (p.tier === "T3" && state.asc >= p.ascMin && state.asc <= p.ascMax) return p.key;
+    }
+    return "t3-early";
+  }
+
+  function doneCount(p) {
+    var d = state.done[p.key] || {}, n = 0;
+    for (var i = 0; i < p.actions.length; i++) if (d[i]) n++;
+    return n;
+  }
+
+  // ---- Rendering ----
+  var elTimeline = document.getElementById("timeline");
+  var elActions = document.getElementById("actions");
+  var elFocus = document.getElementById("focusTags");
+  var elLedTitle = document.getElementById("ledTitle");
+  var elLedRange = document.getElementById("ledRange");
+  var elProgFill = document.getElementById("progFill");
+  var elProgPct = document.getElementById("progPct");
+  var elNote = document.getElementById("phaseNote");
+
+  function renderTimeline() {
+    var rec = recommendedKey();
+    elTimeline.innerHTML = "";
+    PHASES.forEach(function (p, idx) {
+      var chip = document.createElement("button");
+      chip.className = "phase-chip";
+      chip.setAttribute("aria-selected", p.key === state.selected ? "true" : "false");
+      var total = p.actions.length, done = doneCount(p);
+      var pctW = total ? Math.round(done / total * 100) : 0;
+      chip.innerHTML =
+        (p.key === rec ? '<span class="youhere">You are here</span>' : '') +
+        '<span class="pn">Stage ' + (idx + 1) + '</span>' +
+        '<span class="pt">' + p.label + '</span>' +
+        '<span class="pr">' + p.range + '</span>' +
+        '<span class="mini-bar"><i style="width:' + pctW + '%"></i></span>';
+      chip.addEventListener("click", function () {
+        state.selected = p.key; save(); renderAll();
+        chip.scrollIntoView({ block: "nearest", inline: "center" });
+      });
+      elTimeline.appendChild(chip);
+    });
+  }
+
+  function renderLedger() {
+    var p = phaseByKey(state.selected);
+    elLedTitle.textContent = p.label;
+    elLedRange.textContent = p.range;
+
+    elFocus.innerHTML = "";
+    p.focus.forEach(function (f) {
+      var s = document.createElement("span");
+      s.className = "ft"; s.textContent = f; elFocus.appendChild(s);
+    });
+
+    var d = state.done[p.key] || {};
+    elActions.innerHTML = "";
+    p.actions.forEach(function (a, i) {
+      var li = document.createElement("li");
+      li.className = "act" + (d[i] ? " done" : "");
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.className = "chk"; cb.checked = !!d[i];
+      cb.setAttribute("aria-label", (d[i] ? "Done: " : "Mark done: ") + a.t);
+      cb.addEventListener("change", function () {
+        if (!state.done[p.key]) state.done[p.key] = {};
+        state.done[p.key][i] = cb.checked;
+        save(); li.classList.toggle("done", cb.checked);
+        renderProgress(); renderTimeline();
+      });
+      var body = document.createElement("div");
+      body.className = "act-body";
+      body.innerHTML =
+        '<div class="a-top"><span class="a-txt"></span><span class="sys"></span></div>' +
+        '<p class="why"></p>';
+      body.querySelector(".a-txt").textContent = a.t;
+      body.querySelector(".sys").textContent = a.sys;
+      body.querySelector(".why").textContent = a.why;
+      li.appendChild(cb); li.appendChild(body);
+      elActions.appendChild(li);
+    });
+
+    if (p.note) { elNote.hidden = false; elNote.innerHTML = p.note; }
+    else { elNote.hidden = true; }
+
+    renderProgress();
+  }
+
+  function renderProgress() {
+    var p = phaseByKey(state.selected);
+    var total = p.actions.length, done = doneCount(p);
+    var pct = total ? Math.round(done / total * 100) : 0;
+    elProgFill.style.width = pct + "%";
+    elProgPct.textContent = pct + "%";
+  }
+
+  function renderControls() {
+    var btns = document.querySelectorAll("#tierSeg button");
+    btns.forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.tier === state.tier ? "true" : "false");
+    });
+    var ascRow = document.getElementById("ascRow");
+    var ascInput = document.getElementById("ascInput");
+    var ascHint = document.getElementById("ascHint");
+    ascInput.value = state.asc;
+    if (state.tier === "T1") {
+      ascRow.classList.add("disabled");
+      ascHint.textContent = "Ascension unlocks after 10 Prestiges.";
+    } else {
+      ascRow.classList.remove("disabled");
+      ascHint.textContent = state.tier === "T2"
+        ? "Your Ascension count. A7+ unlocks the Deep Ascension plan."
+        : "Post-Transcendence ascension. Phases shift ~A7 / A20 / A30 / A55 / A66.";
+    }
+  }
+
+  function renderAll() {
+    renderControls();
+    renderDetected();
+    renderTimeline();
+    renderLedger();
+  }
+
+  // ---- Events ----
+  document.querySelectorAll("#tierSeg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      state.tier = b.dataset.tier;
+      if (state.tier === "T1") state.asc = 1;
+      else if (state.tier === "T2" && state.asc < 1) state.asc = 1;
+      else if (state.tier === "T3" && state.asc < 7) state.asc = 7;
+      state.selected = recommendedKey();
+      save(); renderAll();
+    });
+  });
+
+  var ascInput = document.getElementById("ascInput");
+  function clampAsc(v) { v = parseInt(v, 10); if (isNaN(v)) v = 1; return Math.max(1, Math.min(120, v)); }
+  function setAsc(v) {
+    state.asc = clampAsc(v);
+    state.selected = recommendedKey();
+    save(); renderAll();
+  }
+  ascInput.addEventListener("change", function () { setAsc(ascInput.value); });
+  document.getElementById("ascUp").addEventListener("click", function () { setAsc(state.asc + 1); });
+  document.getElementById("ascDown").addEventListener("click", function () { setAsc(state.asc - 1); });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (window.confirm("Clear all checked-off items and saved position?")) {
+      state.done = {}; save(); renderAll();
+    }
+  });
+
+  // ---- Save import engine ----
+  var elDetected = document.getElementById("detected");
+  var elSaveText = document.getElementById("saveText");
+  var elImpStatus = document.getElementById("impStatus");
+
+  function setStatus(msg, kind) {
+    elImpStatus.textContent = msg;
+    elImpStatus.className = "imp-status" + (kind ? " " + kind : "");
+  }
+
+  function bytesToText(b) { return new TextDecoder("utf-8").decode(b); }
+
+  function extractJson(text) {
+    if (!text) return null;
+    var s = text.indexOf("{"), e = text.lastIndexOf("}");
+    if (s < 0 || e < 0 || e < s) return null;
+    try { return JSON.parse(text.slice(s, e + 1)); } catch (_) { return null; }
+  }
+
+  function base64ToBytes(str) {
+    str = str.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+    var pad = str.length % 4; if (pad) str += "====".slice(pad);
+    var bin = atob(str);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function inflate(bytes, format) {
+    var ds = new DecompressionStream(format);
+    var stream = new Blob([bytes]).stream().pipeThrough(ds);
+    return new Response(stream).arrayBuffer().then(function (ab) { return new Uint8Array(ab); });
+  }
+
+  function deepFind(obj, key, depth) {
+    depth = depth || 0;
+    if (!obj || typeof obj !== "object" || depth > 5) return undefined;
+    if (Object.prototype.hasOwnProperty.call(obj, key)) return obj[key];
+    for (var k in obj) {
+      var v = obj[k];
+      if (v && typeof v === "object") {
+        var f = deepFind(v, key, depth + 1);
+        if (f !== undefined) return f;
+      }
+    }
+    return undefined;
+  }
+
+  function looksLikeSave(o) {
+    if (!o || typeof o !== "object") return false;
+    var keys = ["AscensionCount", "ReincarnationCount", "Class1Level", "ReincarnationPointTotal", "CurrentWorld"];
+    for (var i = 0; i < keys.length; i++) if (deepFind(o, keys[i]) !== undefined) return true;
+    return false;
+  }
+
+  function toNum(v) {
+    if (v == null) return null;
+    if (typeof v === "object") v = (v.mantissa != null ? v.mantissa : (v.value != null ? v.value : null));
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+
+  function fmtNum(n) {
+    if (n == null) return "—";
+    n = Number(n); if (!isFinite(n)) return "—";
+    var a = Math.abs(n);
+    if (a < 1000) return String(Math.round(n * 100) / 100);
+    var u = [["T", 1e12], ["B", 1e9], ["M", 1e6], ["K", 1e3]];
+    for (var i = 0; i < u.length; i++) if (a >= u[i][1]) return (n / u[i][1]).toFixed(2).replace(/\.?0+$/, "") + u[i][0];
+    return String(n);
+  }
+
+  function fmtBig(v) {
+    if (v == null) return "—";
+    if (typeof v === "object" && v.mantissa != null) {
+      var m = v.mantissa, e = v.exponent || 0;
+      if (e < 6) return fmtNum(m * Math.pow(10, e));
+      return (Math.round(m * 100) / 100) + "e" + e;
+    }
+    return fmtNum(v);
+  }
+
+  // Try to turn raw bytes into a parsed save object (Promise<obj|null>)
+  function decodeBytes(bytes) {
+    if (!bytes || !bytes.length) return Promise.resolve(null);
+    var direct = extractJson(bytesToText(bytes));       // already-plain JSON?
+    if (looksLikeSave(direct)) return Promise.resolve(direct);
+    if (!window.DecompressionStream) return Promise.resolve(null);
+    var formats = [];
+    if (bytes[0] === 0x1f && bytes[1] === 0x8b) formats.push("gzip");  // gzip magic first
+    formats.push("gzip", "deflate", "deflate-raw");
+    var i = 0;
+    function next() {
+      if (i >= formats.length) return Promise.resolve(null);
+      var fmt = formats[i++];
+      return inflate(bytes, fmt).then(function (out) {
+        var j = extractJson(bytesToText(out));
+        return looksLikeSave(j) ? j : next();
+      }).catch(function () { return next(); });
+    }
+    return next();
+  }
+
+  // Accept {text} and/or {bytes}; resolve to a save object or null
+  function parseSave(input) {
+    var first = Promise.resolve(null);
+    if (input.text && input.text.trim()) {
+      var t = input.text.trim();
+      var direct = extractJson(t);
+      if (looksLikeSave(direct)) return Promise.resolve(direct);
+      var b = null; try { b = base64ToBytes(t); } catch (_) {}
+      if (b) first = decodeBytes(b);
+    }
+    return first.then(function (r) {
+      if (looksLikeSave(r)) return r;
+      if (input.bytes) return decodeBytes(input.bytes);
+      return null;
+    });
+  }
+
+  function applySave(data) {
+    var asc = toNum(deepFind(data, "AscensionCount")); if (asc == null) asc = 0;
+    var reinc = toNum(deepFind(data, "ReincarnationCount")); if (reinc == null) reinc = 0;
+
+    var classMax = null;
+    for (var i = 1; i <= 7; i++) {
+      var cl = toNum(deepFind(data, "Class" + i + "Level"));
+      if (cl != null) classMax = Math.max(classMax == null ? 0 : classMax, cl);
+    }
+
+    var chalDone = null, chalFound = false, cc = 0;
+    for (var j = 1; j <= 10; j++) {
+      var v = deepFind(data, "Challenge" + j + "Done");
+      if (v !== undefined) { chalFound = true; if (v === true || v === 1 || v === "1" || v === "true") cc++; }
+    }
+    if (chalFound) chalDone = cc;
+
+    var transc = toNum(deepFind(data, "Transcendence")); if (transc == null) transc = 0;
+    var portalFloor = Math.max(toNum(deepFind(data, "maxFloor")) || 0, toNum(deepFind(data, "currentFloor")) || 0) || null;
+    var bestArea = toNum(deepFind(data, "BestArea"));
+    if (bestArea == null) bestArea = toNum(deepFind(data, "AscensionBestArea"));
+    var seedPts = fmtBig(deepFind(data, "seedPoints"));
+    var mSeeds = fmtBig(deepFind(data, "megaSeeds"));
+
+    // Tier is authoritative from the Transcendence field; Ascension picks the phase within a tier.
+    var tier, useAsc;
+    if (transc >= 1) { tier = "T3"; useAsc = asc >= 7 ? asc : 7; }
+    else if (asc >= 1) { tier = "T2"; useAsc = asc; }
+    else { tier = "T1"; useAsc = 1; }
+
+    state.tier = tier; state.asc = useAsc; state.reinc = reinc;
+    state.selected = recommendedKey();
+    state.detected = {
+      transc: transc, asc: asc, reinc: reinc,
+      portalFloor: portalFloor, bestArea: bestArea,
+      seedPts: seedPts, mSeeds: mSeeds,
+      classMax: classMax, chalDone: chalDone, tier: tier
+    };
+    PARSED = data;
+    try { localStorage.setItem("fapi-save-json", JSON.stringify(data)); } catch (e) { /* quota — keep in memory */ }
+    save();
+    renderAll();
+    renderSystemTabs();
+
+    var p = phaseByKey(state.selected);
+    var head = tier === "T3" ? "Transcended (T3)" : tier === "T2" ? "Ascension " + asc + " (T2)" : "Early game (T1)";
+    setStatus("Loaded ✓  " + head + "  →  “" + p.label + "”", "ok");
+  }
+
+  function renderDetected() {
+    if (!state.detected) { elDetected.hidden = true; elDetected.innerHTML = ""; return; }
+    var d = state.detected;
+    var rows = [
+      ["Ascension", d.asc != null ? d.asc : "—"],
+      ["Portal floor", fmtNum(d.portalFloor)],
+      ["Best area", d.bestArea != null ? d.bestArea : "—"],
+      ["Highest class", d.classMax != null ? "Lv " + fmtNum(d.classMax) : "—"],
+      ["Seed points", d.seedPts || "—"],
+      ["Mega seeds", d.mSeeds || "—"],
+      ["Challenges", d.chalDone != null ? d.chalDone + "/10" : "—"],
+      ["Transcended", d.transc >= 1 ? "Yes (" + d.transc + ")" : "No"]
+    ];
+    var html = '<p class="det-title">Detected from your save</p><div class="det-grid">';
+    for (var i = 0; i < rows.length; i++) html += '<div class="det-card"><span class="dl"></span><span class="dv"></span></div>';
+    html += '</div>';
+    elDetected.innerHTML = html;
+    var cards = elDetected.querySelectorAll(".det-card");
+    for (var k = 0; k < rows.length; k++) {
+      cards[k].querySelector(".dl").textContent = rows[k][0];
+      cards[k].querySelector(".dv").textContent = rows[k][1];
+    }
+    elDetected.hidden = false;
+  }
+
+  document.getElementById("readBtn").addEventListener("click", function () {
+    var txt = elSaveText.value || "";
+    if (!txt.trim()) { setStatus("Paste your copysave string first.", "err"); return; }
+    setStatus("Reading…", "");
+    parseSave({ text: txt }).then(function (jsn) {
+      if (!looksLikeSave(jsn)) { setStatus("Couldn't read that — make sure you copied the whole copysave string.", "err"); return; }
+      applySave(jsn);
+    }).catch(function (e) { setStatus("Error: " + (e && e.message ? e.message : e), "err"); });
+  });
+
+  document.getElementById("saveFile").addEventListener("change", function (ev) {
+    var f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    setStatus("Reading " + f.name + "…", "");
+    f.arrayBuffer().then(function (buf) {
+      return parseSave({ bytes: new Uint8Array(buf) });
+    }).then(function (jsn) {
+      if (!looksLikeSave(jsn)) { setStatus("Couldn't read that file — try the copysave paste method instead.", "err"); return; }
+      applySave(jsn);
+    }).catch(function (e) { setStatus("Error reading file: " + (e && e.message ? e.message : e), "err"); });
+    ev.target.value = "";
+  });
+
+  // ---- System-tab helpers ----
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  function bd(v) { // normalize numbers or {mantissa,exponent} to {m,e}
+    if (v == null) return null;
+    if (typeof v === "number") {
+      if (!isFinite(v)) return null;
+      if (v === 0) return { m: 0, e: 0 };
+      var e = Math.floor(Math.log10(Math.abs(v)));
+      return { m: v / Math.pow(10, e), e: e };
+    }
+    if (typeof v === "object" && v.mantissa != null) return { m: v.mantissa, e: v.exponent || 0 };
+    return null;
+  }
+  function bdCmp(a, b) { // >0 if a>b
+    a = bd(a); b = bd(b);
+    if (!a && !b) return 0; if (!a) return -1; if (!b) return 1;
+    if (a.m === 0 && b.m === 0) return 0;
+    if (a.m === 0) return -1; if (b.m === 0) return 1;
+    if (a.e !== b.e) return a.e - b.e;
+    return a.m - b.m;
+  }
+  function bdStr(v) {
+    var x = bd(v); if (!x) return "—";
+    if (x.m === 0) return "0";
+    if (x.e < 6 && x.e > -3) return fmtNum(x.m * Math.pow(10, x.e));
+    return x.m.toFixed(2) + "e" + x.e;
+  }
+  function fmtDur(sec) {
+    sec = Math.max(0, Math.round(Number(sec) || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+    if (h > 0) return h + "h " + m + "m";
+    var s = sec % 60; return m + "m " + s + "s";
+  }
+  function emptyState() {
+    return '<div class="empty-state"><b>Import your save above to unlock this tab.</b><br>It reads your real pets, expedition teams, cards, buildings and gear — and tells you what to do with them.</div>';
+  }
+  function sysStats(rows) {
+    return '<div class="sys-stat-row">' + rows.map(function (r) {
+      return '<div class="sys-stat"><span class="l">' + esc(r[0]) + '</span><span class="v">' + esc(String(r[1])) + '</span></div>';
+    }).join("") + "</div>";
+  }
+  function rowItem(rank, name, meta, right) {
+    return '<div class="rowitem">' +
+      '<span class="rk">' + (rank != null ? "#" + rank : "") + "</span>" +
+      '<span><span class="nm">' + esc(name) + "</span>" + (meta ? '<br><span class="meta">' + esc(meta) + "</span>" : "") + "</span>" +
+      '<span class="val">' + (right || "") + "</span></div>";
+  }
+
+  // Card ID → name (from the community fapi-tools data) and reward priority (from the wiki expedition guide)
+  var CARD_NAMES = {1:"Potato",2:"Class Exp",3:"Skull",4:"Confection Exp",5:"Reincarnation Exp",6:"Item Rating",7:"Poop Bonus",8:"Milk Bonus",9:"Whack Score",10:"Brewing Exp",11:"Calcium Exp",12:"Fermenting Exp",13:"Residue Bonus",14:"Worm Qty",15:"Larva Qty",16:"Larva EFF",17:"Attack/Hp",18:"Pet Dmg",19:"Pet Level Exp",20:"Pet Rank Exp",21:"Card Power",22:"Card Exp",23:"Healthy Potato",24:"Plant Rank Exp",25:"Plant Harvest",26:"Plant Final Prod",27:"Fries Bonus",28:"Protein Bonus",29:"Grasshopper Dmg",30:"Contagion HP",31:"Reinc Point Bonus",32:"Plant Growth",33:"Exp. Token Bonus",34:"Mining Exp",35:"Mining Power",36:"Building Speed",37:"Renown Bonus",38:"Sweet Potatoe",39:"Skull Powder",40:"Subclass Exp",41:"Seed Chunks",42:"Outpost Level",81:"Outpost Mineral",1001:"Potato Gain",1002:"Class Exp Gain",1003:"Skull Gain",1004:"Worm Qty Gain",1005:"Poop Gain",1006:"Larva Qty Gain",1007:"Whack Gain",1008:"Milk Gain",1009:"Residue Gain",1010:"Card Power Gain",1011:"Expedition Reward",1012:"Expedition Time Gain",1013:"Expedition Damage",1014:"Card Exp",1015:"Reinc Pts Gain",1016:"Token Gain"};
+  var CARD_PRIORITY = { 18: 7, 6: 6, 5: 5, 19: 4, 20: 3, 8: 2, 13: 1 }; // Pet Damage highest
+  function cardName(id) { return CARD_NAMES[id] || (id > 1000 ? "Resource #" + id : "Card #" + id); }
+  function expPriority(cards) {
+    var best = 0, sum = 0;
+    (cards || []).forEach(function (id) { var w = CARD_PRIORITY[id] || 0; if (w > best) best = w; sum += w; });
+    return { best: best, sum: sum };
+  }
+
+  // Pet ID → name and catch-location (extracted from the gameplayplanner pet database)
+  var PET_NAMES = {1:"Cocorico",2:"Rico",3:"Trevor",4:"Bingo",5:"Primfeet",6:"Nidhogg",7:"Vidar",8:"Hiko",9:"Murphy",10:"Aphrodite",11:"Nuts",12:"Alvin",13:"Flash",14:"Cid",15:"Tango",16:"Darti",17:"Arizona",18:"Suijin",19:"Johny Be Good",20:"Nucifera",21:"Barney",22:"Seth",23:"Plyne",24:"Zac",25:"Tock",26:"The Governess",27:"Swamp King",28:"Itzamna",29:"Julian",30:"Yuhuang",31:"Serket",32:"Fujin",33:"Ulrich",34:"Huginn",35:"Esus",36:"Hera",37:"Asterios",38:"Odile",39:"Anubis",40:"Garuda",41:"Tsukuyomi",42:"Nanbozo",43:"Ra",44:"Vishnou",45:"Icare",46:"Olaf",47:"Fafnir",48:"Quetzalcoalt",49:"Professor Inderwind",50:"Dangun",51:"Wako",52:"Papyru",53:"Sigma",54:"Louna",55:"Babou",56:"Niord",57:"Mous",58:"Flafy",59:"Nick",60:"Cherry",61:"Abby",62:"Noop",63:"Juba",64:"David",65:"Viktor",66:"Darko",67:"Ubel",68:"Than",69:"Hirma",70:"Boletus",71:"Froz",72:"Beelzebub",73:"Nasr",74:"Bump",75:"Nyx",76:"Neith",77:"Leon",78:"Puff",79:"Apollo",80:"BigMouth",81:"Neptune",82:"Strawberry",83:"Jack Ballon",84:"Zack Canon",85:"Miss Spook",86:"Mister Spook",87:"Touchy Cloud",88:"Clover Worm",89:"Decoy Billy",90:"Pandora Box",91:"Super Leek",92:"Mister Radish",93:"Super Star",94:"Star Flower",95:"Drone Mk1",96:"Worm Scout",97:"Thor",98:"Australian Emu",99:"Disco Ball",100:"Cyber Dog",101:"Marty",102:"Brain Bot",103:"Hyperion",104:"Blue Bloon",105:"Blue Cherry",106:"Cornicus",107:"Runic Water",108:"Runic Air",109:"Straw Barrus",110:"Stone Worm",111:"Weapon Angelus",112:"Runic Fire",113:"Rasperus",114:"Pearus",115:"Air Angelus",116:"Runic Bramble",117:"Water Worm",118:"Radus",119:"Dionysus",120:"Persephone",121:"Palana",122:"Exocet",123:"Licker",124:"Khamul",125:"Grognak",126:"Bargnak",127:"Samovar",128:"Chip",129:"Baba",130:"Bobo",131:"Drone Scout",132:"Scan Probe",133:"Land Mine",134:"Bombing Probe",135:"Ground Terraformer",136:"Air Terraformer",137:"Walking Artillery",138:"Cruiser",139:"Breach Opener",140:"Runic Weapon",141:"Bramble Angelus",142:"Lemonous",143:"Fire Worm"};
+  var PET_LOC = {1:"3-2",2:"3-2",3:"3-3",4:"3-4",5:"3-6",6:"4-1",7:"3-5",8:"3-7",9:"3-8",10:"3-9",11:"4-2",12:"4-7",13:"4-4",14:"4-3",15:"4-5",16:"4-6",17:"4-9",18:"5-1",19:"4-8",20:"5-2",21:"5-3",22:"5-4",23:"5-5",24:"5-6",25:"5-7",26:"5-8",27:"5-9",28:"6-1",29:"6-2",30:"6-3",31:"E1C",32:"E1R",33:"E2C",34:"E2R",35:"E3C",36:"E3R",37:"E4C",38:"E4R",39:"E6C",40:"E6R",41:"E7C",42:"E7R",43:"E8C",44:"E8R",45:"E9C",46:"E9R",47:"E10C",48:"E10R",49:"E12C",50:"E12R",51:"6-4",52:"6-5",53:"6-6",54:"6-7",55:"6-8",56:"6-9",57:"7-1",58:"7-2",59:"7-3",60:"7-4",61:"E13C",62:"E13R",63:"E14C",64:"E14R",65:"E15C",66:"E15R",67:"E16C",68:"E16R",69:"E18C",70:"E18R",71:"E5C",72:"E5R",73:"E11C",74:"E11R",75:"E17C",76:"E17R",77:"7-5",78:"7-6",79:"7-7",80:"7-8",81:"7-9",82:"Anniv. 1",83:"E19C",84:"E19R",85:"E20C",86:"E20R",87:"E21C",88:"E21R",89:"E22C",90:"E22R",91:"E23C",92:"E23R",93:"E24C",94:"E24R",95:"8-1",96:"8-2",97:"8-3",98:"8-4",99:"8-5",100:"8-6",101:"8-7",102:"8-8",103:"8-9",104:"League 1",105:"Anniv. 2",106:"Portal 0",107:"Portal 50",108:"Portal 100",109:"Portal 150",110:"Portal 200",111:"Portal 250",112:"Portal 300",113:"Portal 350",114:"Portal 400",115:"Portal 450",116:"Portal 500",117:"Portal 550",118:"Portal 600",119:"E25C",120:"E25R",121:"E26C",122:"E26R",123:"E27C",124:"E27R",125:"E28C",126:"E28R",127:"E29C",128:"E29R",129:"E30C",130:"E30R",131:"9-1",132:"9-2",133:"9-3",134:"9-4",135:"9-5",136:"9-6",137:"9-7",138:"9-8",139:"9-9",140:"Portal 650",141:"Portal 700",142:"Portal 750",143:"Portal 800"};
+  function petName(id) { return PET_NAMES[id] || ("Pet #" + id); }
+  function petLoc(id) { return PET_LOC[id] || ""; }
+  function petBonus(p) { // what the pet buffs (BonusList IDs 1–100 → label)
+    if (!p || !p.BonusList) return "";
+    var out = [];
+    p.BonusList.forEach(function (b) { if (b.ID >= 1 && b.ID <= 100 && CARD_NAMES[b.ID] && out.indexOf(CARD_NAMES[b.ID]) < 0) out.push(CARD_NAMES[b.ID]); });
+    return out.join(", ");
+  }
+  // Town building names + effects (from the game's TranslationOneTime.cs) and minerals they consume (IDs 0–4)
+  var MINERAL_NAMES = { 0: "Stone", 1: "Brass", 2: "Iron", 3: "Gold", 4: "Platinum" };
+  var BUILDING_NAMES = {0:"Potato Deposit",1:"Skull Cemetery",2:"Whack Club",3:"Poop Pit",4:"Milk House",5:"Residue House",6:"Reincarnation Altar",7:"Healthy Hothouse",8:"Protein House",9:"Trade Center",10:"Token Vault",11:"After Life Altar",12:"Pet Camp",13:"Sweet Potato",14:"Skull Powder",15:"Subclass Exp",16:"Seed Chunks"};
+  var BUILDING_EFFECT = {0:"+Potato bonus power",1:"+Skull bonus power",2:"+Whack Score power",3:"+Poop bonus power",4:"+Milk bonus power",5:"×Residue created",6:"×Reincarnation Points",7:"+Healthy Potato power",8:"×Protein created",9:"Exchange / trade system",10:"×Expedition Tokens",11:"×Reincarnation Exp",12:"×Pet Damage",13:"×Sweet Potato",14:"×Skull Powder",15:"×Subclass Exp",16:"×Seed Chunks"};
+  function buildingName(id) { return BUILDING_NAMES[id] || ("Building #" + id); }
+  function buildingMinerals(b) { return (b.MineralID || []).map(function (m) { return MINERAL_NAMES[m] || ("Mineral " + m); }).join(" + "); }
+  // Expedition / zone names (decompiled from TranslationOneTime — GM.EXPM.ExpeditionName[]).
+  var EXP_NAMES = {1:"Butternut Forest",2:"Cheddar Plain",3:"Guacamole Grotto",4:"Orange Mountain",5:"Zucchini Field",6:"Munster Desert",7:"Pancake Road",8:"Salmon Lake",9:"Garlic Iceland",10:"Cinnamon Station",11:"Apple Domain",12:"Donut Cavern",13:"Emmental Canyon",14:"Lettuce Sea",15:"Tuna Waterfall",16:"Avocado River",17:"Banana Volcano",18:"Onion Hilltop",19:"Kiwi Land",20:"Croissant Castle",21:"Mozzarella Meadow",22:"Cucumber Region",23:"Basil Country",24:"Chocolate World",25:"Corn Forest",26:"Strawberry Plain",27:"Raspberry Grotto",28:"Pear Mountain",29:"Radditz Field",30:"Lemon Desert"};
+  function expName(id) { return EXP_NAMES[id] || ("Expedition #" + id); }
+
+  // ---- System-tab renderers (all read the game's own stored values) ----
+  // Expedition reward bonuses a pet can provide (resource IDs), + pet damage (decompiled from PetData)
+  var EXP_BONUS = { 1013: "Damage", 1016: "Token", 1011: "Reward", 1015: "Reinc Pts", 1010: "Card Power", 1014: "Card Exp", 1012: "Time", 1009: "Residue" };
+  var EXP_BONUS_ORDER = [1013, 1016, 1011, 1015, 1010, 1014, 1012, 1009];
+  function petDamage(p) { return (p.BaseDungeonDamage || 0) * 5 * (1 + (p.Rank || 0) * 0.05); } // PetData.TotalDungeonDamage()
+  function petExpBonuses(p) { var out = []; (p.BonusList || []).forEach(function (b) { if (EXP_BONUS[b.ID]) out.push(b.ID); }); return out; }
+  function ptypeTag(p) { return p.Type === 1 ? '<span class="ptype g">GND</span>' : (p.Type === 2 ? '<span class="ptype a">AIR</span>' : ""); }
+  function teamSynergy(team) { // GetSynergyBonus: 0.25/pet + 0.25 both types + 0.25 if 2+ each
+    var g = 0, a = 0;
+    team.forEach(function (p) { if (p.Type === 1) g++; else if (p.Type === 2) a++; });
+    var s = team.length * 0.25;
+    if (g > 0 && a > 0) { s += 0.25; if (g > 1 && a > 1) s += 0.25; }
+    return s;
+  }
+  function teamDamageL10(team, globalL10) {
+    var base = 0; team.forEach(function (p) { base += petDamage(p); });
+    return base > 0 ? Math.log10(base) + globalL10 + Math.log10(teamSynergy(team)) : -Infinity;
+  }
+  // How many Ground / Air slots per expedition team (read from your actual teams; default 2+2).
+  function expeditionSlots() {
+    var teams = deepFind(PARSED, "ExpeditionTeam") || [], pets = deepFind(PARSED, "PetsCollection") || [];
+    var mg = 0, ma = 0;
+    teams.forEach(function (t) {
+      if (!t || !t.ExpeditionTeamID) return;
+      var g = 0, a = 0;
+      t.ExpeditionTeamID.forEach(function (id) { if (id > 0 && pets[id]) { if (pets[id].Type === 1) g++; else if (pets[id].Type === 2) a++; } });
+      mg = Math.max(mg, g); ma = Math.max(ma, a);
+    });
+    return { ground: mg || 2, air: ma || 2 };
+  }
+  // Greedy optimum: to maximize total damage, fill each team with your strongest pets per slot type.
+  function buildTeams(coll, nTeams, gSlots, aSlots) {
+    var ground = coll.filter(function (p) { return p.Type === 1; }); // coll pre-sorted by damage
+    var air = coll.filter(function (p) { return p.Type === 2; });
+    var teams = [], gi = 0, ai = 0, t, x, y;
+    for (t = 0; t < nTeams; t++) {
+      var team = [];
+      for (x = 0; x < gSlots && gi < ground.length; x++) team.push(ground[gi++]);
+      for (y = 0; y < aSlots && ai < air.length; y++) team.push(air[ai++]);
+      teams.push(team);
+    }
+    return teams;
+  }
+  // Expeditions ranked by reward value (reuses card-reward priority).
+  function rankedExpeditions() {
+    var defs = deepFind(PARSED, "ExpeditionsCollection") || [];
+    return defs.map(function (e) {
+      // Only assign teams to UNLOCKED expeditions (Locked===1 = unlocked, reversed convention).
+      if (!e || e.Locked !== 1 || !e.CardFound) return null;
+      var cf = e.CardFound.filter(function (x) { return x > 0; });
+      if (!cf.length) return null;
+      return { id: e.ID, cards: cf, pr: expPriority(cf) };
+    }).filter(Boolean).sort(function (a, b) { return (b.pr.best - a.pr.best) || (b.pr.sum - a.pr.sum); });
+  }
+
+  function renderPets() {
+    var el = document.getElementById("petsBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var coll = (deepFind(PARSED, "PetsCollection") || []).filter(function (p) { return p && (p.BaseDungeonDamage > 0 || p.Level > 0 || p.Rank > 0); });
+    coll.sort(function (a, b) { return petDamage(b) - petDamage(a); });
+    var ground = coll.filter(function (p) { return p.Type === 1; });
+    var air = coll.filter(function (p) { return p.Type === 2; });
+    var tokens = toNum(deepFind(PARSED, "PetTokenCurrent")) || 0;
+    var html = sysStats([
+      ["Owned pets", coll.length],
+      ["Ground / Air", ground.length + " / " + air.length],
+      ["Best pet dmg", fmtNum(coll.length ? petDamage(coll[0]) : 0)],
+      ["Pet tokens", tokens],
+      ["Total rank", fmtNum(toNum(deepFind(PARSED, "HighestTotalPetRank")))]
+    ]);
+    html += '<p class="sys-note">Expedition damage = <b>BaseDamage × 5 × (1 + Rank × 0.05)</b> (decompiled from the game). Teams take Ground + Air pets, so fill each slot with your strongest of that type. Each pet also grants specific expedition reward bonuses — build a team around the reward you want (see the Bonus Finder below).</p>';
+    if (tokens > 0) html += '<div class="rec-box"><b>' + tokens + " pet token" + (tokens > 1 ? "s" : "") + " available</b> — spend on promoting a maxed high-rank pet for more damage.</div>";
+
+    // ---- Best Teams (auto-built + assigned to top expeditions) ----
+    var nTeams = toNum(deepFind(PARSED, "ExpeditionLimit")) || toNum(deepFind(PARSED, "ExpeditionCurrent")) || 8;
+    var slots = expeditionSlots();
+    var globalL10 = bdLog10(deepFind(PARSED, "PetDamageBonusesBD")); if (globalL10 === -Infinity) globalL10 = 0;
+    var teams = buildTeams(coll, nTeams, slots.ground, slots.air);
+    var teamDmgs = teams.map(function (t) { return teamDamageL10(t, globalL10); });
+    var totalL10 = teamDmgs.reduce(function (acc, d) { return logAdd(acc, d); }, -Infinity);
+    var expList = rankedExpeditions();
+    var teamSize = slots.ground + slots.air, syn = teams[0] ? teamSynergy(teams[0]) : 1.5;
+    LAST.teamTotalL10 = totalL10; LAST.teamCount = nTeams; LAST.teamTop = teams[0]; LAST.expTop = expList[0];
+    html += '<div class="sys-h">Best Teams <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(auto-built · assigned to your best expeditions)</span></div>';
+    html += '<p class="sys-note">Your strongest pets in ' + nTeams + ' teams of ' + teamSize + ' (' + slots.ground + ' Ground + ' + slots.air + ' Air = <b>' + syn.toFixed(2) + '× synergy</b>), each assigned to your highest-reward expedition (strongest team → most valuable expedition). Total damage ≈ <b>e' + (totalL10 === -Infinity ? "0" : totalL10.toFixed(0)) + '</b> = Σ pet damage × synergy × global multiplier, decompiled from the game.</p>';
+    html += teams.map(function (t, i) {
+      var names = t.map(function (p) { return '<span class="pn"><span class="ptype ' + (p.Type === 1 ? "g" : "a") + '">' + (p.Type === 1 ? "G" : "A") + '</span>' + esc(petName(p.ID)) + '</span>'; }).join("");
+      var e = expList[i];
+      var expLine = e ? '<div class="texp">→ ' + esc(expName(e.id)) + ' · rewards ' + e.cards.map(cardName).join(", ") + '</div>' : '';
+      return '<div class="team-row"><span class="rnum">' + (i + 1) + '</span><div class="tinfo"><div class="tnames">' + names + '</div>' + expLine + '</div><span class="rval">e' + (teamDmgs[i] === -Infinity ? "0" : teamDmgs[i].toFixed(0)) + '</span></div>';
+    }).join("");
+
+    html += petBlock("Best Ground pets", ground.slice(0, 8));
+    html += petBlock("Best Air pets", air.slice(0, 8));
+
+    html += '<div class="sys-h">Pet Bonus Finder</div><p class="sys-note">For each expedition reward type, your pets that provide it — ranked by damage. Run these on expeditions that give that reward.</p>';
+    html += '<div class="bonus-grid">';
+    EXP_BONUS_ORDER.forEach(function (bid) {
+      var list = coll.filter(function (p) { return petExpBonuses(p).indexOf(bid) >= 0; }).sort(function (a, b) { return petDamage(b) - petDamage(a); });
+      if (!list.length) return;
+      html += '<div class="bonus-find"><div class="bf-head">' + EXP_BONUS[bid] + ' Gain <span>' + list.length + ' pets</span></div>' +
+        list.slice(0, 6).map(function (p, i) {
+          return '<div class="rank-row"><span class="rnum">' + (i + 1) + '</span><span class="rname">' + ptypeTag(p) + esc(petName(p.ID)) + '</span><span class="rval">' + fmtNum(petDamage(p)) + '</span></div>';
+        }).join("") + '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+  function petBlock(title, list) {
+    if (!list.length) return "";
+    return '<div class="sys-h">' + title + '</div><div class="rowlist">' + list.map(function (p, i) {
+      var eb = petExpBonuses(p).map(function (id) { return EXP_BONUS[id]; }).join(", ");
+      var right = "Dmg " + fmtNum(petDamage(p)) + (p.InExpedition ? ' <span class="flag good">out</span>' : "");
+      return rowItem(i + 1, petName(p.ID), "Rank " + fmtNum(p.Rank) + " · base " + (p.BaseDungeonDamage || 0) + (eb ? " · gives " + eb : "") + (petLoc(p.ID) ? " · from " + petLoc(p.ID) : ""), right);
+    }).join("") + "</div>";
+  }
+
+  // ---- Shop cost tables (decompiled) + "buy next" recommenders ----
+  var EXP_SHOP = {"Slot":{"max":3,"base":50,"mult":5},"PetDropChance":{"max":10,"base":25,"mult":1.5},"PetDamage":{"max":20,"base":25,"mult":1.25},"AttackHP":{"max":60,"base":10,"mult":1.09},"PetLoadout":{"max":2,"base":50,"mult":10},"ExpeditionLoadout":{"max":4,"base":25,"mult":4},"ChargeTransfertPower":{"max":10,"base":250,"mult":1.5},"EquipmentBonusOnRarity":{"max":10,"base":250,"mult":3},"ExpeditionScalingReduction":{"max":40,"base":500,"mult":1.05},"PetLevelScalingReduction":{"max":20,"base":750,"mult":1.1},"OutpostLimit":{"max":4,"base":1000,"mult":2},"BuildingTimeReduction":{"max":25,"base":250,"mult":1.15},"OutpostMineralChance":{"max":20,"base":400,"mult":1.2},"TradeCenterFasterCharge":{"max":10,"base":500,"mult":1.4},"TradeCenterMoreCharge":{"max":2,"base":1000,"mult":5},"TownRenownBonus":{"max":30,"base":600,"mult":1.15},"EnhancingCostReduction":{"max":20,"base":650,"mult":1.15},"TradeCenterBetterDeal":{"max":10,"base":750,"mult":1.45},"HardnessScaling":{"max":30,"base":900,"mult":1.15},"OutpostChance":{"max":15,"base":1000,"mult":1.35},"ImprovedMining":{"max":15,"base":1500,"mult":1.25},"OutpostLevel":{"max":25,"base":2500,"mult":1.1},"MineralChanceScaling":{"max":25,"base":2000,"mult":1.12},"MinRating":{"max":15,"la":5,"lb":5},"MinRarity":{"max":5},"GroundSlot":{"max":1},"AirSlot":{"max":1},"AutoRestart":{"max":1},"AdditionalResource":{"max":1},"CardCharge":{"max":2}};
+  var EXP_SHOP_FLAT = { GroundSlot: 75, AirSlot: 300, AutoRestart: 500, AdditionalResource: 60, CardCharge: 1500 };
+  var EXP_SHOP_PRIO = ["PetDamage", "MinRating", "MinRarity", "ChargeTransfertPower", "CardCharge", "AttackHP", "PetDropChance", "EquipmentBonusOnRarity", "ExpeditionScalingReduction", "PetLevelScalingReduction", "AdditionalResource", "OutpostLimit", "TownRenownBonus", "EnhancingCostReduction", "OutpostChance", "ImprovedMining", "OutpostLevel"];
+  function expShopLevel(n) { return toNum(deepFind(PARSED, "ExpeShop" + n + "Level")) || 0; }
+  function expShopNextCost(n) { var u = EXP_SHOP[n]; if (!u) return null; var lv = expShopLevel(n); if (u.base && u.mult) return Math.round(u.base * Math.pow(u.mult, lv)); if (u.la != null) return u.la + u.lb * lv; if (EXP_SHOP_FLAT[n] != null) return EXP_SHOP_FLAT[n]; return null; }
+  function bestExpShopBuy() {
+    var tokens = toNum(deepFind(PARSED, "ExpeditionToken")) || 0;
+    // Only recommend a category that's actually UNLOCKED: a missing save key means you haven't
+    // opened that upgrade yet (don't confuse "not unlocked" with "unlocked at level 0").
+    var pending = EXP_SHOP_PRIO.filter(function (n) { var u = EXP_SHOP[n]; return u && deepFind(PARSED, "ExpeShop" + n + "Level") != null && expShopLevel(n) < u.max; });
+    if (!pending.length) return { allMaxed: true, tokens: tokens };
+    var n = pending[0], u = EXP_SHOP[n], cost = expShopNextCost(n);
+    return { name: humanize(n), level: expShopLevel(n), max: u.max, cost: cost, afford: cost != null && cost <= tokens, tokens: tokens };
+  }
+  var PORTAL_UP = {"0":[450,0.05,30,25],"1":[1350,0.05,40,25],"2":[7500,0.05,50,25],"3":[15,0.075,25,25],"4":[550,0.075,35,50],"5":[975,0.075,45,75],"6":[350,0.05,30,50],"7":[950,0.05,40,50],"8":[10000,0.05,50,50],"9":[750,1,30,10],"10":[1250,1,55,10],"11":[1300,1,99,10],"15":[30,0.01,25,25],"16":[650,0.01,35,25],"17":[1500,0.01,45,25],"18":[40,0.00025,20,20],"19":[650,0.00025,45,20],"21":[100,0.05,30,25],"22":[900,0.05,40,25],"23":[5000,0.05,50,25],"24":[35,0.02,25,50],"25":[600,0.02,35,50],"26":[1200,0.02,45,50],"27":[200,0.1,30,25],"28":[850,0.1,40,25],"29":[6000,0.1,50,25],"36":[10,0.15,20,25],"37":[500,0.15,35,25],"38":[1400,0.15,45,25],"57":[175,0.1,35,25],"71":[25,0.015,30,75]};
+  function megaSeedsNum() { var v = deepFind(PARSED, "megaSeeds"); if (!v) return 0; if (typeof v === "object" && v.mantissa != null) return v.mantissa * Math.pow(10, v.exponent || 0); return Number(v) || 0; }
+  function bestPortalBuy() {
+    var lvls = deepFind(PARSED, "portalShopLevels") || [], asc = toNum(deepFind(PARSED, "AscensionCount")) || 0, mega = megaSeedsNum();
+    var avail = [];
+    for (var k in PORTAL_UP) { var a = PORTAL_UP[k], pm = a[0], boni = a[1], unlAsc = a[2], mx = a[3], lv = Number(lvls[k]) || 0; if (asc < unlAsc || lv >= mx) continue; var price = pm * (lv + 1); avail.push({ i: +k, boni: boni, price: price, lv: lv, max: mx, afford: price <= mega, val: boni / price }); }
+    var aff = avail.filter(function (a) { return a.afford; }).sort(function (a, b) { return b.val - a.val; });
+    var cheap = avail.slice().sort(function (a, b) { return a.price - b.price; });
+    return { mega: mega, count: avail.length, best: aff[0] || null, cheapest: cheap[0] || null };
+  }
+
+  // ---- Sweet Potato shop (prestige) — decompiled cost table (matches in-game exactly) ----
+  var SP_SHOP = [
+    { id: 0, base: 500, incr: 0.2, g: 0.008, f: "SPExpeToken", n: "Expedition Tokens", e: "+Expedition Tokens per level" },
+    { id: 1, base: 10000, incr: 0.05, g: 0.0005, f: "SPProtein", n: "Protein", e: "×Protein" },
+    { id: 2, base: 5000, incr: 0.05, g: 0.0005, f: "SPPetLevelExp", n: "Pet Level Exp", e: "×Pet Level Exp" },
+    { id: 3, base: 2500, incr: 0.2, g: 0.0008, f: "SPReincPoint", n: "Reincarnation Points", e: "×Reincarnation Points (+25%/lvl)", asc: true },
+    { id: 4, base: 25000, incr: 0.05, g: 0.0005, f: "SPGHDmg", n: "Grasshopper Dmg", e: "×Grasshopper Damage" },
+    { id: 5, base: 10000, incr: 0.25, g: 0.008, f: "SPCaptureChance", n: "Pet Capture", e: "+Pet Capture chance" },
+    { id: 6, base: 15000, incr: 0.05, g: 0.0005, f: "SPMiningPow", n: "Mining Power", e: "×Mining Power" },
+    { id: 7, base: 75000, incr: 0.15, g: 0.005, f: "SPOutpostLevel", n: "Outpost Level", e: "+Outpost Level" },
+    { id: 8, base: 50000, incr: 0.4, g: 0.04, f: "SPAscReqReduc", n: "Ascension Requirement Reduction", e: "Cuts the reincarnation level you need to Ascend", asc: true },
+    { id: 9, base: 100000, incr: 0.05, g: 0.0005, f: "SPFries", n: "Fries", e: "×Fries" },
+    { id: 10, base: 150000, incr: 0.05, g: 0.0005, f: "SPPetDmg", n: "Pet Damage", e: "×Pet Damage" },
+    { id: 11, base: 200000, incr: 0.05, g: 0.0005, f: "SPItemRating", n: "Item Rating", e: "×Item Rating" },
+    { id: 12, base: 250000, incr: 0.05, g: 0.0005, f: "SPCardPow", n: "Card Power", e: "×Card Power" },
+    { id: 13, base: 300000, incr: 0.25, g: 0.008, f: "SPRenownExp", n: "Renown Exp", e: "×Renown Exp" }
+  ];
+  // Per-upgrade unlock requirement = minimum AscensionCount (decompiled from SweetPotatoesMain.RefreshLock;
+  // ids 0-4 always open; ids 11/12/13 gate at asc 40/42/44 — don't recommend a locked one).
+  var SP_UNLOCK = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 32, 6: 32, 7: 34, 8: 34, 9: 36, 10: 38, 11: 40, 12: 42, 13: 44 };
+  function sweetPotatoBal() { var v = deepFind(PARSED, "SweetPotatoesBD"); if (v == null) v = deepFind(PARSED, "SweetPotatoes"); if (v && typeof v === "object" && v.mantissa != null) return v.mantissa * Math.pow(10, v.exponent || 0); return Number(v) || 0; }
+  function sweetPotatoReduction() { var fs = deepFind(PARSED, "FarmingShopUniqueMainGame") || [], s = 0; for (var i = 103; i <= 112; i++) s += Number(fs[i]) || 0; return Math.pow(0.97, s) * Math.pow(0.99, toNum(deepFind(PARSED, "ExpeShopSweetPotatoReductionLevel")) || 0); }
+  function bestSweetPotato() {
+    var bal = sweetPotatoBal(), red = sweetPotatoReduction(), asc = toNum(deepFind(PARSED, "AscensionCount")) || 0, ascTop = null;
+    var rows = SP_SHOP.map(function (u) {
+      var lv = toNum(deepFind(PARSED, u.f)) || 0;
+      var c = u.base * Math.pow(1 + (u.incr + lv * u.g) * red, lv);
+      var req = SP_UNLOCK[u.id] || 0, unlocked = asc >= req;
+      var r = { u: u, lv: lv, cost: c, afford: unlocked && c <= bal, unlocked: unlocked, req: req };
+      if (u.id === 8 && unlocked) ascTop = r; // only recommend Ascension-Req-Reduction once it's unlocked
+      return r;
+    });
+    return { bal: bal, rows: rows, ascTop: ascTop, asc: asc };
+  }
+
+  function renderSweetPotato() {
+    var el = document.getElementById("spBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var b = bestSweetPotato();
+    LAST.sweetPotato = b.ascTop;
+    LAST.spRows = b.rows; LAST.spBal = b.bal;
+    var nUnlocked = b.rows.filter(function (r) { return r.unlocked; }).length;
+    var html = sysStats([
+      ["Sweet Potatoes", fmtNum(b.bal)],
+      ["Upgrades unlocked", nUnlocked + " / " + SP_SHOP.length],
+      ["Ascension", "#" + fmtNum(b.asc)]
+    ]);
+    html += '<p class="sys-note">A prestige shop of permanent upgrades. Costs are decompiled and match in-game exactly. For pushing Ascension, the two levers that matter most are <b>Ascension Requirement Reduction</b> (cuts the reinc level you need) and <b>Reincarnation Points</b> — everything else is a general multiplier.</p>';
+    if (b.ascTop) html += '<div class="rec-box"><b>Ascension priority: ' + esc(b.ascTop.u.n) + '</b> (Lv ' + b.ascTop.lv + ') — ' + b.ascTop.u.e + '. Cost <b>' + fmtNum(b.ascTop.cost) + '</b> sweet potatoes' + (b.ascTop.afford ? ' — <b>affordable now.</b>' : ' — you have ' + fmtNum(b.bal) + ', keep banking toward it.') + '</div>';
+    html += '<div class="sys-h">All upgrades</div><div class="rowlist">' + b.rows.map(function (r) {
+      var flag = !r.unlocked ? '<span class="flag warn">🔒 Ascension ' + r.req + '</span>' : (r.afford ? '<span class="flag good">Afford</span>' : '<span class="flag warn">' + fmtNum(r.cost) + '</span>');
+      var meta = r.u.e + " · Lv " + r.lv + (!r.unlocked ? " · locked until Ascension #" + r.req : "");
+      return rowItem(null, r.u.n + (r.u.asc ? ' ⭐' : ""), meta, flag);
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  // ---- Skull / Perk shop (core combat engine, bought with Skulls) ----
+  var PERKS = [
+    { f: "PerkReincarnationExpLevel", n: "Reincarnation Exp", e: "Directly multiplies reincarnation-exp — a direct Ascension lever", asc: true },
+    { f: "PerkAtkLevel", n: "Attack", e: "Raises combat damage → clear deeper areas → more reinc-exp", core: true },
+    { f: "PerkHPRegenLevel", n: "HP & Regen", e: "Survive deeper → clear further", core: true },
+    { f: "PerkAttackSpeedLevel", n: "Attacks / sec", e: "More DPS (caps at 5)" },
+    { f: "PerkCriticalChanceLevel", n: "Critical Chance", e: "More damage (caps ~25%)" },
+    { f: "PerkEvadeChanceLevel", n: "Evade Chance", e: "Survivability" },
+    { f: "PerkItemRatingLevel", n: "Item Rating", e: "Better gear → more damage" },
+    { f: "PerkPotatoQtyLevel", n: "Potato Quantity", e: "More potatoes per wave → more kills & exp" },
+    { f: "PerkWhackScoreLevel", n: "Whack Score", e: "Whack-a-Potato scaling" },
+    { f: "PerkDropChanceLevel", n: "Drop Chance", e: "More item drops" }
+  ];
+  function renderPerks() {
+    var el = document.getElementById("perkBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var html = sysStats([
+      ["Skulls", bdStr(deepFind(PARSED, "PerkCurrentBD"))],
+      ["Attack perk", fmtNum(toNum(deepFind(PARSED, "PerkAtkLevel")))],
+      ["HP perk", fmtNum(toNum(deepFind(PARSED, "PerkHPRegenLevel")))],
+      ["Reinc-Exp perk", fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")))]
+    ]);
+    html += '<p class="sys-note">The Skull shop — permanent combat perks bought with Skulls (decompiled from BattleDeathUpgrade). <b>This is your core damage engine:</b> more Attack/HP → clear deeper → more Waves & Class levels → more reincarnation-exp → Ascend. Skulls are effectively unlimited vs cost, so use <b>One-Click Buy Max</b> — the question is priority.</p>';
+    html += '<div class="rec-box"><b>Priority:</b> keep <b>Reincarnation Exp</b> ⭐ (a direct ascension multiplier — it\'s in the reinc-exp formula), then max <b>Attack</b> &amp; <b>HP</b> for combat depth. Attack Speed / Crit / Evade cap out — level them to the cap, then leave them.</div>';
+    html += '<div class="sys-h">Your perks</div><div class="rowlist">' + PERKS.map(function (p) {
+      var lv = toNum(deepFind(PARSED, p.f));
+      var flag = p.asc ? ' <span class="flag good">Ascension ⭐</span>' : (p.core ? ' <span class="flag tip">Core damage</span>' : "");
+      return rowItem(null, p.n, p.e, "Lv " + fmtNum(lv) + flag);
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  // ---- Talents (talent tree) — grounded in the reincarnation formula ----
+  var REINC_GIANT_IDX = [1, 2, 7, 8, 13, 14, 19, 20, 25, 26, 31, 32]; // GiantNode indices in ReincarnationBonusesBD
+  function renderTalents() {
+    var el = document.getElementById("talentBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var g = deepFind(PARSED, "GiantNode") || [];
+    var reincNodes = 0; REINC_GIANT_IDX.forEach(function (i) { reincNodes += Number(g[i]) || 0; });
+    var reincNodeLvl = toNum(deepFind(PARSED, "ReincNodeBonusLevel")) || 0;
+    var classLvls = []; for (var i = 1; i <= 6; i++) { var lv = toNum(deepFind(PARSED, "Class" + i + "Level")); if (lv != null) classLvls.push(lv); }
+    var maxClass = classLvls.length ? Math.max.apply(null, classLvls) : 0;
+    var html = sysStats([
+      ["Talent points", fmtNum(toNum(deepFind(PARSED, "CurrentTalentPoints")))],
+      ["Total earned", fmtNum(toNum(deepFind(PARSED, "TotalTalentPoints")))],
+      ["Classes", classLvls.length],
+      ["Highest class", fmtNum(maxClass)]
+    ]);
+    html += '<p class="sys-note">The talent tree — spend points on nodes per class. A node-by-node optimiser isn\'t practical, but the decompiled reincarnation formula tells us exactly which talents matter most for Ascension:</p>';
+    html += '<div class="rec-box"><b>Reincarnation talent nodes ⭐</b> — the reinc-exp formula multiplies by <b>×' + (1 + reincNodes * 0.25).toFixed(2) + '</b> from your <b>' + reincNodes + '/12</b> reincarnation Giant Nodes, and <b>×' + (1 + reincNodeLvl * 0.1).toFixed(1) + '</b> from ReincNode Lv ' + reincNodeLvl + '. ' + (reincNodes >= 12 ? "You've grabbed all 12 giant reinc nodes — maxed! ✓" : "Grab the remaining " + (12 - reincNodes) + " reincarnation Giant Nodes — each is a direct ×1.25 to reinc-exp.") + '</div>';
+    html += '<div class="rec-box"><b>Level all classes in parallel.</b> Class levels feed reinc-exp directly (the "Class Level" term in the reincarnation breakdown). Yours: ' + classLvls.map(fmtNum).join(", ") + '. Levels in <em>every</em> class grant talent points for your current class, so parallel leveling compounds fastest.</div>';
+    html += '<div class="sys-h">Talent priority (community)</div><ul class="rules">' +
+      '<li><b>Node order:</b> Freeloader first (raises equipment levels), then <b>Smasher &gt; Hoer &gt; Farmer &gt; Freeloader</b>.</li>' +
+      '<li><b>Keystone rotation:</b> Harvester (worm find), Rancher (+milk), Freeloader (protein / equipment).</li>' +
+      '<li><b>While pushing Ascension:</b> prioritise the Reincarnation nodes and any Giant nodes that boost reinc-exp — they\'re direct ascension multipliers.</li>' +
+      '</ul>';
+    el.innerHTML = html;
+  }
+
+  function renderExpeditions() {
+    var el = document.getElementById("expBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var defs = deepFind(PARSED, "ExpeditionsCollection") || [];
+    var pets = deepFind(PARSED, "PetsCollection") || [];
+    var teams = (deepFind(PARSED, "ExpeditionTeam") || []).filter(function (t) {
+      return t && t.ExpeditionTeamID && t.ExpeditionTeamID.some(function (x) { return x > 0; });
+    });
+    teams.sort(function (a, b) { return bdCmp(b.TeamDmgBD || b.TeamDmg, a.TeamDmgBD || a.TeamDmg); });
+    var runningBy = {}; teams.forEach(function (t) { runningBy[t.WhichExpedition] = t; });
+
+    var ranked = defs.map(function (e) {
+      // Locked===1 means UNLOCKED (reversed convention) — only offer expeditions you've actually opened.
+      if (!e || e.Locked !== 1 || !e.CardFound) return null;
+      var cf = e.CardFound.filter(function (x) { return x > 0; });
+      if (!cf.length) return null;
+      var rf = (e.ResourceFound || []).filter(function (x) { return x > 0; });
+      return { id: e.ID, cards: cf, res: rf, pr: expPriority(cf), running: !!runningBy[e.ID] };
+    }).filter(Boolean);
+    ranked.sort(function (a, b) { if (b.pr.best !== a.pr.best) return b.pr.best - a.pr.best; return b.pr.sum - a.pr.sum; });
+
+    var petDmgNotRun = ranked.filter(function (r) { return r.cards.indexOf(18) >= 0 && !r.running; });
+    LAST.expRanked = ranked; LAST.petDmgNotRun = petDmgNotRun;
+    var idle = teams.filter(function (t) { return !t.InExpedition; });
+    var noAuto = teams.filter(function (t) { return t.InExpedition && !t.AutoRestart; });
+    var cur = toNum(deepFind(PARSED, "ExpeditionCurrent")), lim = toNum(deepFind(PARSED, "ExpeditionLimit"));
+    // You can SAVE more team loadouts than you can SEND at once — only ExpeditionLimit run simultaneously.
+    var sendLimit = lim || 8;
+    var running = teams.filter(function (t) { return t.InExpedition; });
+    var freeSlots = Math.max(0, sendLimit - running.length);
+
+    var html = sysStats([
+      ["Exp. tokens", bdStr(deepFind(PARSED, "ExpeditionToken"))],
+      ["Running", running.length + " / " + sendLimit],
+      ["Saved loadouts", teams.length],
+      ["Best wave", fmtNum(toNum(deepFind(PARSED, "HighestTotalExpeditionWave")))]
+    ]);
+    html += '<p class="sys-note">Each expedition\'s reward cards are read from your save and ranked by community reward priority: Pet Damage &gt; Item Rating &gt; Reincarnation &gt; Pet Level &gt; Pet Rank &gt; Milk &gt; Residue. Pet-Damage expeditions are worth running 24/7. You can run <b>' + sendLimit + ' at a time</b> (saving extra bench loadouts is fine — they just can\'t all be sent at once).</p>';
+    if (freeSlots > 0 && idle.length) html += '<div class="rec-box"><b>' + freeSlots + " free expedition slot" + (freeSlots > 1 ? "s" : "") + ":</b> send out " + idle.slice(0, freeSlots).map(function (t) { return esc(t.TeamName); }).join(", ") + ".</div>";
+    else if (idle.length && freeSlots === 0) html += '<div class="rec-box"><b>' + idle.length + " bench loadout" + (idle.length > 1 ? "s" : "") + ":</b> " + idle.map(function (t) { return esc(t.TeamName); }).join(", ") + " — all " + sendLimit + " slots are full, so these stay benched until one frees or you unlock another slot.</div>";
+    if (noAuto.length) html += '<div class="rec-box"><b>Auto-Restart off:</b> ' + noAuto.map(function (t) { return esc(t.TeamName); }).join(", ") + " — turn it on.</div>";
+    if (petDmgNotRun.length) html += '<div class="rec-box"><b>Pet Damage expeditions you\'re NOT running:</b> ' + petDmgNotRun.slice(0, 5).map(function (r) { return esc(expName(r.id)); }).join(", ") + " — swap a team onto one (Pet Damage is top priority).</div>";
+    else html += '<div class="rec-box"><b>Nice — your Pet Damage expeditions are covered.</b></div>';
+
+    html += '<div class="sys-h">Expeditions by reward value</div><div class="rowlist">' + ranked.slice(0, 14).map(function (r) {
+      var badge = r.pr.best >= 7 ? '<span class="flag tip">Pet Damage</span> ' : (r.pr.best >= 5 ? '<span class="flag tip">High value</span> ' : "");
+      var run = r.running ? '<span class="flag good">Running</span>' : '<span class="flag warn">Not run</span>';
+      var meta = "Cards: " + r.cards.map(cardName).join(", ") + (r.res.length ? "  ·  Resources: " + r.res.map(cardName).join(", ") : "");
+      return rowItem(null, esc(expName(r.id)), meta, badge + run);
+    }).join("") + "</div>";
+
+    html += '<div class="sys-h">Your teams (strongest first)</div><div class="rowlist">' + teams.map(function (t, i) {
+      var slots = t.ExpeditionTeamID.filter(function (x) { return x > 0; });
+      var comp = slots.map(function (id) { var p = pets[id]; return p ? (p.Type === 1 ? "G" : (p.Type === 2 ? "A" : "?")) : "?"; }).join("");
+      var def = defs[t.WhichExpedition];
+      var rew = (def && def.CardFound) ? def.CardFound.filter(function (x) { return x > 0; }).map(cardName).join(", ") : "?";
+      var right = (t.InExpedition ? '<span class="flag good">Running</span>' : '<span class="flag warn">Idle</span>') + (t.InExpedition && !t.AutoRestart ? ' <span class="flag tip">No auto</span>' : "");
+      return rowItem(i + 1, esc(t.TeamName) + " · " + esc(expName(t.WhichExpedition)),
+        "Dmg " + bdStr(t.TeamDmgBD || t.TeamDmg) + " · " + fmtDur(t.ExpeditionLenght) + " · team " + comp + " · rewards " + rew, right);
+    }).join("") + "</div>";
+
+    // Zone completion bonuses — each zone grants a permanent account-wide multiplier
+    // of (1 + BonusPower)^HighestWave, where HighestWave is stored as `Room`. Decompiled &
+    // verified against the game (zone 1: 1.05^54079 = 7.5e1147%, matches the on-screen figure).
+    var ZONE_STAT = { 1: "Attack & HP", 2: "Class Exp", 3: "Milk", 4: "Whack Score", 5: "Item Rating", 6: "Healthy Potato", 7: "Poop", 8: "Grasshopper Dmg", 9: "Protein", 10: "Fries", 11: "Perk", 12: "Confection", 13: "Reincarnation", 14: "Pet Damage", 15: "Card Power" };
+    var zones = defs.map(function (e) {
+      // NOTE reversed convention: Locked===1 means UNLOCKED/active (same quirk as the Assembler).
+      if (!e || !e.Locked || !e.BonusPower || !e.Room || e.Room <= 1) return null;
+      var bl10 = e.Room * Math.log10(1 + e.BonusPower); // log10 of the account-wide multiplier
+      return { id: e.ID, name: expName(e.ID), room: e.Room, bp: e.BonusPower, l10: bl10, stat: ZONE_STAT[e.ID] || ("Zone #" + e.ID), running: !!runningBy[e.ID] };
+    }).filter(Boolean);
+    if (zones.length) {
+      var totalL10 = zones.reduce(function (s, z) { return s + z.l10; }, 0);
+      // Frontier zones = lowest total bonus so far → most % growth per wave pushed.
+      var frontier = zones.slice().sort(function (a, b) { return a.l10 - b.l10; }).slice(0, 5);
+      LAST.zoneFrontier = frontier;
+      html += '<div class="sys-h">Zone bonuses <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(permanent, account-wide)</span></div>';
+      html += '<p class="sys-note">Every zone permanently boosts one stat, compounding per highest wave reached. These stack across all zones and never reset — pushing waves here is pure permanent power. Your combined zone bonus is about <b>' + pctFromL10(totalL10 + 2) + '</b>. Because it compounds per wave, the <b>lowest zones grow fastest per wave</b> — park a strong team on these frontier zones:</p>';
+      html += '<div class="rowlist">' + frontier.map(function (z, i) {
+        var right = z.running ? '<span class="flag good">Running</span>' : '<span class="flag warn">Not run</span>';
+        return rowItem(i + 1, esc(z.name) + " · " + z.stat, "Wave " + fmtNum(z.room) + " · current bonus +" + pctFromL10(z.l10 + 2) + " · +" + (z.bp * 100).toFixed(1) + "%/wave compounding", right);
+      }).join("") + "</div>";
+    }
+
+    var sr = bestExpShopBuy(); LAST.expShop = sr;
+    html += '<div class="sys-h">Expedition Shop — buy next</div>';
+    if (sr.allMaxed) html += '<div class="rec-box"><b>All key expedition-shop upgrades are maxed.</b> ' + fmtNum(sr.tokens) + ' tokens banked — save for the next tier.</div>';
+    else html += '<div class="rec-box"><b>Buy next: ' + esc(sr.name) + '</b> (Lv ' + sr.level + '/' + sr.max + ') for <b>' + fmtNum(sr.cost) + ' tokens</b>' + (sr.afford ? ' — you can afford it now (' + fmtNum(sr.tokens) + ' banked).' : ' — you have ' + fmtNum(sr.tokens) + ', keep banking.') + ' Costs &amp; levels decompiled from the game.</div>';
+
+    el.innerHTML = html;
+  }
+
+  // Card bonus formulas decompiled from CardData.TempBonus / PermaBonus.
+  // [powBase, logBase, mult]  →  (bonus − 1) = powBase ^ log_logBase(Power) × mult
+  var CARD_TEMP = {17:[1.2,1.5,0.015],1:[1.2,1.3,0.018],2:[1.2,1.35,0.016],3:[1.2,1.325,0.015],5:[1.2,1.55,0.001],6:[1.2,1.525,0.002],9:[1.2,1.325,0.02],23:[1.1,7,0.18],7:[1.2,1.325,0.016],4:[1.2,1.3,0.016],8:[1.2,1.35,0.012],10:[1.2,1.325,0.011],11:[1.2,1.325,0.01],12:[1.2,1.4,0.008],13:[1.2,1.525,0.002],28:[1.1,7,0.045],14:[1.2,1.4,0.01],15:[1.2,1.3,0.015],16:[1.2,1.3,0.02],29:[1.1,7,0.09],18:[1.2,1.525,0.003],19:[1.2,1.5,0.002],20:[1.2,1.55,0.001],27:[1.1,7,0.009],34:[1.09,8,0.018],35:[1.08,9,0.0045]};
+  var CARD_PERMA = {17:[1.2,1.5,0.0075],1:[1.2,1.3,0.009],2:[1.2,1.35,0.008],3:[1.2,1.325,0.0075],5:[1.2,1.55,0.0005],6:[1.2,1.525,0.001],9:[1.2,1.325,0.01],23:[1.1,7,0.09],7:[1.2,1.325,0.008],4:[1.2,1.3,0.008],8:[1.2,1.35,0.006],10:[1.2,1.325,0.0055],11:[1.2,1.325,0.005],12:[1.2,1.4,0.004],13:[1.2,1.525,0.001],28:[1.1,7,0.0225],14:[1.2,1.4,0.005],15:[1.2,1.3,0.0075],16:[1.2,1.3,0.01],29:[1.1,7,0.045],18:[1.2,1.525,0.0015],19:[1.2,1.5,0.001],20:[1.2,1.55,0.0005],27:[1.1,7,0.0045],34:[1.1,7,0.0135],35:[1.1,7,0.0045]};
+  // Card → stat category, and per-phase category importance. Weights are chosen automatically from
+  // your detected phase (Home tab) so the Suggested order tunes to where you are in the game.
+  var CARD_CAT = { 17: "dmg", 3: "dmg", 9: "dmg", 5: "reinc", 6: "gear", 18: "pet", 19: "pet", 20: "pet", 1: "eco", 2: "eco", 7: "eco", 8: "eco", 13: "eco", 4: "prod", 10: "prod", 11: "prod", 12: "prod", 14: "prod", 15: "prod", 16: "prod", 23: "end", 27: "end", 28: "end", 29: "end", 34: "end", 35: "end" };
+  var PHASE_WEIGHTS = {
+    early:  { dmg: 1.0, eco: 0.7, gear: 0.6, reinc: 0.4, pet: 0.4, prod: 0.4, end: 0.2 },
+    ascend: { dmg: 1.0, reinc: 0.95, gear: 0.9, pet: 0.75, eco: 0.65, end: 0.5, prod: 0.35 },
+    transc: { reinc: 1.0, gear: 0.95, pet: 0.9, dmg: 0.85, eco: 0.7, end: 0.65, prod: 0.35 }
+  };
+  // Per-card ascension weight = how much that card's stat feeds reincarnation-exp gain (decompiled
+  // from ReincarnationMain): Reinc card is a direct multiplier; damage/Confection/Residue feed it
+  // moderately (combat depth / gain formula / exp-cost reduction); pets & economy barely.
+  var ASCENSION_WEIGHT = { 5: 1.0, 13: 0.6, 4: 0.5, 17: 0.45, 3: 0.45, 6: 0.4, 9: 0.35, 23: 0.35, 2: 0.3, 1: 0.28, 8: 0.22, 7: 0.18, 10: 0.15, 11: 0.15, 12: 0.15, 14: 0.15, 15: 0.15, 16: 0.15, 18: 0.15, 19: 0.12, 20: 0.12, 27: 0.2, 28: 0.2, 29: 0.2, 34: 0.15, 35: 0.15 };
+  function cardPhaseProfile() {
+    var transc = toNum(deepFind(PARSED, "Transcendence")) || 0;
+    var asc = toNum(deepFind(PARSED, "AscensionCount")) || 0;
+    if (transc >= 1) return { key: "transc", label: "Transcended — reincarnation, gear & pets weighted highest" };
+    if (asc >= 1) return { key: "ascend", label: "Pushing Ascension — ranked by real reinc-exp impact (from the decompiled formula)" };
+    return { key: "early", label: "Early game — raw damage weighted highest" };
+  }
+
+  function bdLog10(v) {
+    if (v == null) return -Infinity;
+    if (typeof v === "object" && v.mantissa != null) return v.mantissa > 0 ? (v.exponent || 0) + Math.log10(v.mantissa) : -Infinity;
+    var n = Number(v); return n > 0 ? Math.log10(n) : -Infinity;
+  }
+  function logAdd(a, b) { if (a === -Infinity) return b; if (b === -Infinity) return a; var m = Math.max(a, b); return m + Math.log10(1 + Math.pow(10, Math.min(a, b) - m)); }
+  function bonusMinus1L10(f, powL10) { if (!f || powL10 === -Infinity) return -Infinity; var logB = powL10 * Math.LN10 / Math.log(f[1]); return logB * Math.log10(f[0]) + Math.log10(f[2]); }
+  function cardTransfer() {
+    var lv = function (k) { return toNum(deepFind(PARSED, k)) || 0; };
+    var base = 0.025 + lv("ExpeShopChargeTransfertPowerLevel") * 0.0025 + lv("CowShopChargeTransfertPower") * 0.0025 + lv("WAPChargeTransfertPower") * 0.0025;
+    var fs = deepFind(PARSED, "FarmingShopUniqueMainGame") || [];
+    var farmSum = 0; for (var i = 38; i <= 44; i++) farmSum += (Number(fs[i]) || 0);
+    var red = lv("ExpeShopCardPowerTransferReductionLevel");
+    return { temp: base * Math.pow(0.9, farmSum) * Math.pow(0.9, red), perma: base * Math.pow(1.1, farmSum) * Math.pow(1.1, red) };
+  }
+  // format a %-value given its log10 (e.g. 73.9 → "7.94e73%", 1.1 → "12.5%")
+  function pctFromL10(l10) {
+    if (l10 === -Infinity || isNaN(l10)) return "0%";
+    if (l10 < 4) { var v = Math.pow(10, l10); return (v >= 100 ? Math.round(v) : v.toFixed(1)) + "%"; }
+    var e = Math.floor(l10); return (Math.pow(10, l10 - e)).toFixed(2) + "e" + e + "%";
+  }
+
+  function renderCards() {
+    var el = document.getElementById("cardsBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var coll = (deepFind(PARSED, "CardsCollection") || []).filter(function (c) { return c && (c.Found || c.Level > 0); });
+    var tr = cardTransfer();
+    var logTransferPerma = Math.log10(tr.perma);
+    var prof = cardPhaseProfile();
+    var weights = PHASE_WEIGHTS[prof.key];
+    var rows = coll.map(function (c) {
+      var permaL10 = bdLog10(c.PowerPermaBD), tempL10 = bdLog10(c.PowerTempBD);
+      var tf = CARD_TEMP[c.ID], pf = CARD_PERMA[c.ID];
+      var numv = (c.ID === 26 || c.ID === 27) ? 0.0025 : ((c.ID === 28 || c.ID === 29) ? 0.001 : 0.02);
+      var tL = bonusMinus1L10(tf, tempL10), pL = bonusMinus1L10(pf, permaL10);
+      var curL10 = (tL > -Infinity && pL > -Infinity) ? tL + pL + Math.log10(1 + (c.Level || 0) * numv) + 2 : -Infinity;
+      var newPermaL10 = logAdd(permaL10, tempL10 + logTransferPerma);
+      var before = bonusMinus1L10(pf, permaL10), after = bonusMinus1L10(pf, newPermaL10);
+      var gainL10 = (after > -Infinity && before > -Infinity) ? (after - before) : -Infinity; // log10 of perma-bonus ratio
+      // Pushing ascension → weight by the card's real reinc-exp contribution; otherwise by phase category.
+      var w = (prof.key === "ascend" && ASCENSION_WEIGHT[c.ID] != null) ? ASCENSION_WEIGHT[c.ID]
+        : (weights[CARD_CAT[c.ID]] != null ? weights[CARD_CAT[c.ID]] : 0.4);
+      // Suggested score: importance-led, tempered by catch-up size (log-compressed so huge gains don't drown out weight).
+      var score = gainL10 > 1 ? w * Math.log10(gainL10) * 10 : 0;
+      return { c: c, id: c.ID, name: cardName(c.ID), level: c.Level || 0, known: !!pf, curL10: curL10, gainL10: gainL10, gainPctL10: gainL10 + 2, score: score };
+    });
+    var known = rows.filter(function (r) { return r.known && r.gainL10 > -Infinity; });
+    var bestPct = known.slice().sort(function (a, b) { return b.gainL10 - a.gainL10; });
+    var suggested = known.slice().sort(function (a, b) { return b.score - a.score; });
+    var topId = suggested.length ? suggested[0].id : -1;
+
+    var cur = toNum(deepFind(PARSED, "CurrentCardCharge")), max = toNum(deepFind(PARSED, "MaxCardCharge"));
+    var timeleft = toNum(deepFind(PARSED, "CardChargeTimeleft"));
+    LAST.card = suggested[0] || null; LAST.cardCur = cur; LAST.cardProfile = prof;
+    var html = sysStats([
+      ["Charges ready", (cur != null ? cur : "?")],
+      ["Storage", (cur != null ? cur : "?") + "/" + (max != null ? max : "?")],
+      ["Next charge", (cur != null && max != null && cur < max) ? fmtDur(timeleft) : "full"],
+      ["Cards owned", coll.length],
+      ["Total card level", fmtNum(toNum(deepFind(PARSED, "CurrentCardLevel")))]
+    ]);
+    html += '<p class="sys-note">Charging converts a slice of a card\'s temporary power into permanent power (transfer ≈ ' + (tr.perma * 100).toFixed(1) + '% per charge, from your shops). <b>% Gain</b> = the exact permanent boost a charge gives that card, from the decompiled game formulas. <b>Suggested</b> weights that gain by each stat\'s importance, auto-tuned to your phase.</p>';
+    html += '<div class="rec-box"><b>Auto-weighting:</b> ' + esc(prof.label) + '. Charge order below is best-first for where you are.' + (cur > 0 ? ' You have <b>' + cur + " charge" + (cur > 1 ? "s" : "") + '</b> ready — spend on <b>' + esc(suggested[0] ? suggested[0].name : "—") + '</b>.' : "") + "</div>";
+
+    function rankList(list, valFn) {
+      return list.slice(0, 6).map(function (r, i) {
+        return '<div class="rank-row"><span class="rnum">' + (i + 1) + '</span><span class="rname">' + esc(r.name) + '</span><span class="rval">' + valFn(r) + '</span></div>';
+      }).join("");
+    }
+    html += '<div class="rank-cols">' +
+      '<div class="rank-card primary"><h4>Charge priority <span>best first · ' + (prof.key === "ascend" ? "ascension impact" : "your phase") + '</span></h4>' + rankList(suggested, function (r) { return r.score.toFixed(1); }) + '</div>' +
+      '<div class="rank-card"><h4>Best % gain <span>raw catch-up</span></h4>' + rankList(bestPct, function (r) { return pctFromL10(r.gainPctL10); }) + '</div>' +
+      '</div>';
+
+    // full grid, ordered by suggested
+    html += '<div class="sys-h">All your cards <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(ordered by Suggested)</span></div><div class="card-grid">' + suggested.map(function (r) {
+      return '<div class="ctile' + (r.id === topId ? " top" : "") + '">' +
+        '<div class="cn">' + esc(r.name) + '</div>' +
+        '<div class="cb">bonus ' + pctFromL10(r.curL10) + '</div>' +
+        '<div class="cg">charge → +' + pctFromL10(r.gainPctL10) + '</div>' +
+        '<div class="cl">level ' + fmtNum(r.level) + '</div>' +
+        '</div>';
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  function renderBuildings() {
+    var el = document.getElementById("bldBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var town = (deepFind(PARSED, "TownCollection") || []).filter(function (b) { return b && !b.Locked; });
+    var below = town.map(function (b) { return { b: b, gap: (b.SoftCapLevel || 0) - (b.Level || 0) }; })
+      .filter(function (x) { return x.gap > 0; }).sort(function (a, b) { return b.gap - a.gap; });
+    LAST.building = below[0] ? below[0].b : null;
+    LAST.buildingsBelow = below.slice(0, 4).map(function (x) { return x.b; });
+    var html = sysStats([
+      ["Buildings", town.length],
+      ["Town renown rank", toNum(deepFind(PARSED, "TownRenownRank"))],
+      ["Renown", fmtNum(toNum(deepFind(PARSED, "TownRenownCurrent")))],
+      ["Outpost limit", toNum(deepFind(PARSED, "OutpostLimit"))]
+    ]);
+    html += '<p class="sys-note">Each building boosts a specific stat (shown below) and consumes minerals (Stone, Brass, Iron, Gold, Platinum). Levels shown vs their soft cap (efficient target) and hard cap (max). Upgrading buildings still below their soft cap is generally the best value.</p>';
+    if (below.length) html += '<div class="rec-box"><b>Upgrade next (furthest below soft cap):</b> ' + below.slice(0, 4).map(function (x) { return esc(buildingName(x.b.ID)) + " (Lv " + x.b.Level + "→" + x.b.SoftCapLevel + ")"; }).join(", ") + ".</div>";
+    html += '<div class="sys-h">All buildings</div><div class="rowlist">' + town.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (b) {
+      var soft = b.SoftCapLevel || 0, hard = b.HardCapLevel || 0, lv = b.Level || 0;
+      var flag = lv >= hard ? '<span class="flag good">Max</span>' : (lv < soft ? '<span class="flag tip">Below soft cap</span>' : '<span class="flag warn">Past soft cap</span>');
+      var eff = BUILDING_EFFECT[b.ID] || "";
+      return rowItem(null, buildingName(b.ID), (eff ? eff + " · " : "") + buildingMinerals(b) + " · Lv " + lv + " · soft " + soft + " · hard " + hard, flag);
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  function renderEquipment() {
+    var el = document.getElementById("eqBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var equipped = (deepFind(PARSED, "EquippedItems") || []).filter(Boolean);
+    var inv = (deepFind(PARSED, "InventoryItems") || []).filter(function (it) { return it && it.ItemType != null; });
+    var upgradeFor = {};
+    equipped.forEach(function (eq) {
+      var eqR = eq.TotalItemRating != null ? eq.TotalItemRating : eq.BaseItemRating;
+      var best = null;
+      inv.forEach(function (it) {
+        if (it.ItemType !== eq.ItemType) return;
+        var r = it.TotalItemRating != null ? it.TotalItemRating : it.BaseItemRating;
+        if (best == null || bdCmp(r, best.r) > 0) best = { it: it, r: r };
+      });
+      if (best && bdCmp(best.r, eqR) > 0) upgradeFor[eq.ItemType] = best;
+    });
+    var upCount = Object.keys(upgradeFor).length;
+    var html = sysStats([
+      ["Equipped slots", equipped.length],
+      ["Inventory items", inv.length],
+      ["Best item rating", bdStr(deepFind(PARSED, "BestItemRating"))]
+    ]);
+    html += '<p class="sys-note">Item ratings are your save\'s own values. If an unequipped inventory item outrates what\'s in that slot, it\'s flagged — a real, safe swap.</p>';
+    if (upCount) html += '<div class="rec-box"><b>Equip upgrades found:</b> ' + upCount + " slot" + (upCount > 1 ? "s" : "") + " have a higher-rated item sitting in your inventory.</div>";
+    else html += '<div class="rec-box"><b>Gear looks optimal</b> — nothing in your inventory outrates your equipped items.</div>';
+    html += '<div class="sys-h">Equipped</div><div class="rowlist">' + equipped.map(function (eq) {
+      var r = eq.TotalItemRating != null ? eq.TotalItemRating : eq.BaseItemRating;
+      var up = upgradeFor[eq.ItemType];
+      return rowItem(null, "Slot type " + eq.ItemType, "Rarity " + eq.ItemRarity + " · refine x" + eq.RefineMulti,
+        "Rating " + bdStr(r) + (up ? ' <span class="flag tip">Upgrade avail</span>' : ""));
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  // ---- Endgame + extra system renderers ----
+  function humanize(s) { return s.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z])([A-Z][a-z])/g, "$1 $2"); }
+  function levelRows(prefix, suffix) {
+    if (!PARSED) return [];
+    var out = [];
+    for (var k in PARSED) {
+      if (k.indexOf(prefix) !== 0) continue;
+      if (suffix && k.slice(-suffix.length) !== suffix) continue;
+      var v = toNum(PARSED[k]); if (v == null) continue;
+      var name = k.slice(prefix.length);
+      if (suffix) name = name.slice(0, name.length - suffix.length);
+      out.push([humanize(name) || k, v]);
+    }
+    return out;
+  }
+
+  function renderPortal() {
+    var el = document.getElementById("portalBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var floor = Math.max(toNum(deepFind(PARSED, "maxFloor")) || 0, toNum(deepFind(PARSED, "currentFloor")) || 0);
+    var shop = deepFind(PARSED, "portalShopLevels") || [];
+    var owned = shop.filter(function (x) { return x > 0; }).length;
+    var total = shop.reduce(function (a, x) { return a + (Number(x) || 0); }, 0);
+    LAST.portalFloor = floor;
+    var html = sysStats([
+      ["Portal floor", fmtNum(floor)],
+      ["Auto-floor", deepFind(PARSED, "autoFloorActive") ? "ON" : "off"],
+      ["Portal active", deepFind(PARSED, "portalActive") ? "yes" : "no"],
+      ["Shop upgrades owned", owned + "/" + shop.length],
+      ["Total shop levels", fmtNum(total)]
+    ]);
+    html += '<p class="sys-note">Portals are your main multiplier engine through T2 and into Transcendence. Floor + shop investment are read from your save (per-upgrade names aren\'t exposed by the save).</p>';
+    html += '<div class="rec-box"><b>Keep the auto-floor climbing</b> and keep buying portal-shop levels. From ~A55, portal progression beats world farming.</div>';
+    var pr = bestPortalBuy();
+    html += '<div class="rec-box"><b>Portal shop:</b> ' + pr.count + ' upgrade' + (pr.count !== 1 ? "s" : "") + ' unlocked &amp; not maxed. ' + (pr.best ? 'Best value you can afford: a <b>+' + Math.round(pr.best.boni * 100) + '%/level</b> upgrade for <b>' + fmtNum(pr.best.price) + ' mega seeds</b> (you have ' + fmtNum(pr.mega) + ').' : (pr.cheapest ? 'Cheapest next is <b>' + fmtNum(pr.cheapest.price) + ' mega seeds</b> (you have ' + fmtNum(pr.mega) + ') — keep banking.' : 'Nothing available right now.')) + ' <span style="color:var(--soil-soft)">Upgrade names aren\'t in the save — prioritise <b>Item Rarity</b> &amp; <b>Portal HP–ATK reduction</b>.</span></div>';
+    el.innerHTML = html;
+  }
+
+  function renderSeedShop() {
+    var el = document.getElementById("seedBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var html = sysStats([
+      ["Seed points", fmtNum(toNum(deepFind(PARSED, "seedPoints")))],
+      ["Mega seeds", bdStr(deepFind(PARSED, "megaSeeds"))],
+      ["Mega seeds (lifetime)", fmtNum(toNum(deepFind(PARSED, "ACUMegaSeedQty")))]
+    ]);
+    html += '<p class="sys-note">The Seed Shop is a major endgame lever. Community-recommended buy order:</p>';
+    html += '<ol class="ord">' +
+      '<li><b>Auto-seed system</b> — automate seeding first; everything downstream leans on it.</li>' +
+      '<li><b>Item Rarity (HS)</b> — big multiplier on gear quality.</li>' +
+      '<li><b>Subclass EXP</b> &amp; <b>Portal HP–ATK reduction</b> — speeds portal pushing.</li>' +
+      '<li><b>Bonus Seeds</b> — worth it once it\'s ~0.5× your manual seeds.</li>' +
+      '<li><b>Portal HP reduction</b> → <b>Global Bonus</b> → <b>Subclass bonuses</b> → <b>SWP / SKP upgrades</b>.</li>' +
+      '</ol>';
+    el.innerHTML = html;
+  }
+
+  // Ascension simulator: reinc-exp gain is a PRODUCT of these multipliers (decompiled from ReincarnationMain),
+  // so any action that multiplies one of them speeds your ascension by that %. Ranked by marginal impact.
+  function ascensionLevers() {
+    var out = [];
+    var town = deepFind(PARSED, "TownCollection") || [];
+    var b11 = town[11]; // After Life Altar — GetBuildingBonus(11) directly multiplies reinc-exp
+    if (b11 && b11.BonusExpo) {
+      var per = 1 + b11.BonusExpo; // ≈ ×(1+BonusExpo) per level (renown adds a little)
+      out.push({ ic: "🏛️", label: "Upgrade After Life Altar", detail: "Lv " + b11.Level + " · its ×Reinc-Exp bonus adds ~" + Math.round((per - 1) * 100) + "% reincarnation-exp per level", pct: (per - 1) * 100, goto: "buildings" });
+    }
+    var c5 = null, cc = deepFind(PARSED, "CardsCollection") || [];
+    for (var i = 0; i < cc.length; i++) if (cc[i] && cc[i].ID === 5) { c5 = cc[i]; break; }
+    if (c5 && CARD_PERMA[5]) {
+      var tr = cardTransfer();
+      var permaL = bdLog10(c5.PowerPermaBD), tempL = bdLog10(c5.PowerTempBD);
+      var npL = logAdd(permaL, tempL + Math.log10(tr.perma));
+      var g = bonusMinus1L10(CARD_PERMA[5], npL) - bonusMinus1L10(CARD_PERMA[5], permaL);
+      if (g > 0.02) out.push({ ic: "🃏", label: "Charge the Reincarnation card", detail: "directly multiplies reinc-exp by +" + pctFromL10(g + 2) + " per charge", pct: null, goto: "cards" });
+    }
+    var pkReinc = toNum(deepFind(PARSED, "PerkReincarnationExpLevel"));
+    if (pkReinc != null) out.push({ ic: "💀", label: "Level the Reincarnation-Exp Skull perk", detail: "Lv " + fmtNum(pkReinc) + " · directly multiplies reinc-exp (Buy Max with Skulls)", pct: null, goto: "perks" });
+    out.push({ ic: "🥛", label: "Buy cows after each Ascension", detail: "CowShop reinc bonus lv " + fmtNum(toNum(deepFind(PARSED, "CowShopReincarnationBonus")) || 0) + " · each cow = ×1.01 reinc-exp", pct: 1, goto: "residue" });
+    out.push({ ic: "⚔️", label: "Grow total damage (Perks + Talents + classes)", detail: "deeper combat (CurrentLevel " + fmtNum(toNum(deepFind(PARSED, "CurrentLevel"))) + ") raises reinc-exp — logarithmically, so the multipliers above beat raw damage, but it's the base everything scales on", pct: null, goto: "perks" });
+    // Confection Level and the Worm Reincarnation bonus also multiply reinc-exp, but they're driven
+    // by auto-buyers (BAU*/BADU* flags = 1 in your save), so they scale passively — surfaced as feeders, not chores.
+    var conf = toNum(deepFind(PARSED, "ConfectionTotalLevel"));
+    if (conf) out.push({ ic: "🍬", label: "Confection Level (auto)", detail: "Lv " + fmtNum(conf) + " · feeds reinc-exp and rises on autopilot — just keep the worm/confection auto-buyers on", pct: null, goto: "residue", auto: true });
+    var wr = deepFind(PARSED, "WormReincarnationBonusLevelBD");
+    if (wr && bdLog10(wr) > 0) out.push({ ic: "🪱", label: "Worm Reincarnation bonus (auto)", detail: "worm breeding grants a reinc-exp multiplier that scales passively — no action needed while autos are on", pct: null, goto: "residue", auto: true });
+    // Assembly Line 20 (Farming → Assembly) directly multiplies "Reincarnation Exp Earned" (observed in-game).
+    // Unlike the auto production systems, assembly lines are a MANUAL Protein sink — a real decision.
+    var asmAll = deepFind(PARSED, "AssemblerCollection") || [], l20 = null;
+    for (var ai = 0; ai < asmAll.length; ai++) if (asmAll[ai] && asmAll[ai].ID === 20) { l20 = asmAll[ai]; break; }
+    if (l20 && l20.Locked === 1 && (l20.Level || 0) < (l20.LevelMax || 0)) {
+      out.push({ ic: "🧬", label: "Level Assembly Line 20 with Protein", detail: "it multiplies Reincarnation Exp Earned directly · only Lv " + (l20.Level || 0) + "/" + (l20.LevelMax || 0) + " — lots of headroom, and it's a manual Protein sink (not automated)", pct: null, goto: "protein" });
+    }
+    return out.sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
+  }
+
+  function renderTranscendence() {
+    var el = document.getElementById("transBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var tc = toNum(deepFind(PARSED, "Transcendence")) || 0;
+    LAST.transc = tc;
+    var html = sysStats([
+      ["Transcended", tc >= 1 ? "Yes (" + tc + ")" : "Not yet"],
+      ["Current Souls", fmtNum(toNum(deepFind(PARSED, "TotalSoul")))],
+      ["Souls spent", fmtNum(toNum(deepFind(PARSED, "SpentSoul")))],
+      ["Ascension", fmtNum(toNum(deepFind(PARSED, "AscensionCount")))]
+    ]);
+    html += '<p class="sys-note">Transcendence is the T3 prestige — it unlocks the Soul economy and the Soul Shop of permanent perks, and opens the A7–A71 endgame roadmap.</p>';
+    if (tc < 1) html += '<div class="rec-box"><b>You haven\'t Transcended yet</b> — this is your next big milestone. Lock in the key Seed Shop upgrades and push your portal floor, then Transcend to start the Soul layer.</div>';
+    else html += '<div class="rec-box"><b>Spend your Souls in the Soul Shop</b> on permanent perks, then follow the Roadmap through the post-Transcendence ascension bands.</div>';
+
+    var arl = toNum(deepFind(PARSED, "ReincarnationLevel")), areq = toNum(deepFind(PARSED, "AscensionReincLevelRequired"));
+    if (arl != null && areq) {
+      var apct = Math.min(100, arl / areq * 100);
+      html += '<div class="sys-h">Ascension simulator <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(from the reinc-exp formula)</span></div>';
+      html += '<p class="sys-note">You ascend when your Reincarnation level reaches the requirement — currently <b>' + fmtNum(arl) + ' / ' + fmtNum(areq) + ' (' + apct.toFixed(1) + '%)</b>. Decompiled from the game, reincarnation-exp gain is a <b>product</b> of these multipliers, so anything that multiplies one speeds your ascension by that %. Ranked by marginal impact:</p>';
+      html += '<div class="rowlist">' + ascensionLevers().map(function (L, i) {
+        var flag = L.auto ? '<span class="flag tip">auto</span>' : (L.pct != null ? ('<span class="flag good">+' + Math.round(L.pct) + '%/step</span>') : '<span class="flag tip">multiplier</span>');
+        return rowItem(i + 1, L.label, L.detail, flag);
+      }).join("") + '</div>';
+      html += '<p class="sys-note"><b>On autopilot:</b> Worm Breeding, Confection, the Cow Factory brewing lines, and Farming (crop plots, Farming Shop, and Contagion) all run on auto-buyers (confirmed on in your save) and passively feed the multipliers above. Don\'t micromanage them. Your active reinc-exp levers are the top rows — After Life Altar, Reincarnation card, the Skull perk, cows after each ascension — plus <b>Assembly Line #20</b> (a manual Protein sink that multiplies Reincarnation Exp Earned).</p>';
+    }
+    el.innerHTML = html;
+  }
+
+  function renderProtein() {
+    var el = document.getElementById("proteinBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var all = deepFind(PARSED, "AssemblerCollection") || [];
+    var asm = all.filter(function (a) { return a && a.Locked === 1; }); // Locked===1 = unlocked for assemblers
+    var lockedCount = all.filter(function (a) { return a && a.Locked !== 1; }).length;
+    var below = asm.filter(function (a) { return (a.Level || 0) < (a.LevelMax || 0); });
+    LAST.proteinBelow = below.length; LAST.proteinLocked = lockedCount;
+    LAST.proteinBelowIDs = below.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (a) { return a.ID; });
+    LAST.proteinL20 = (asm.filter(function (a) { return a.ID === 20; })[0] || null);
+    var html = sysStats([
+      ["Protein", bdStr(deepFind(PARSED, "ProteinCurrent"))],
+      ["Unlocked lines", asm.length],
+      ["At max", (asm.length - below.length) + "/" + asm.length],
+      ["Still locked", lockedCount]
+    ]);
+    html += '<p class="sys-note">Assembly Lines (Farming → gear tab) are spent up with <b>Protein</b> — and unlike Farming\'s Production, Contagion, and the Worm/Cow systems (all on auto-buyers), this is a <b>manual</b> sink where your choice matters. Each line stacks several bonuses that unlock at level thresholds; lines below max are your upgrade targets.</p>';
+    // Line 20's bonus "Reincarnation Exp Earned" is a direct ascension multiplier (observed in-game).
+    var l20p = asm.filter(function (a) { return a.ID === 20; })[0];
+    if (l20p && (l20p.Level || 0) < (l20p.LevelMax || 0)) html += '<div class="rec-box"><b>Ascending? Prioritise Line #20</b> — it multiplies <b>Reincarnation Exp Earned</b> directly and is only at Lv ' + (l20p.Level || 0) + '/' + (l20p.LevelMax || 0) + ', so it has the most room to speed your ascension.</div>';
+    if (below.length) html += '<div class="rec-box"><b>' + below.length + " unlocked line" + (below.length > 1 ? "s" : "") + " below max</b> — level them for more Protein.</div>";
+    else html += '<div class="rec-box"><b>All ' + asm.length + ' unlocked assembly lines are maxed.</b>' + (lockedCount ? " " + lockedCount + " more unlock later." : "") + "</div>";
+    html += '<div class="sys-h">Assembly lines</div><div class="rowlist">' + asm.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (a) {
+      var lv = a.Level || 0, mx = a.LevelMax || 0;
+      var flag = lv >= mx ? '<span class="flag good">Max</span>' : '<span class="flag tip">' + lv + "/" + mx + "</span>";
+      return rowItem(null, "Line #" + a.ID, "Level " + lv + " / " + mx, flag);
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  function renderOutposts() {
+    var el = document.getElementById("outpostBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var miners = deepFind(PARSED, "MinersCollection") || [];
+    var html = sysStats([
+      ["Outpost limit", fmtNum(toNum(deepFind(PARSED, "OutpostLimit")))],
+      ["Outposts emptied", fmtNum(toNum(deepFind(PARSED, "TotalEmptiedOutpost")))],
+      ["Town renown rank", fmtNum(toNum(deepFind(PARSED, "TownRenownRank")))],
+      ["Miners", miners.length]
+    ]);
+    html += '<p class="sys-note">Outposts supply the minerals (Stone, Brass, Iron, Gold, Platinum) your town buildings and Trade Center need. Keep miners upgraded and outposts emptied.</p>';
+    html += '<div class="sys-h">Miners</div><div class="rowlist">' + miners.map(function (m, i) {
+      return rowItem(i + 1, "Miner #" + m.ID, "Level " + fmtNum(m.Level) + " · upgrades " + (m.UpgradeLevel ? m.UpgradeLevel.join("/") : "?"), "Power " + bdStr(m.FinalPower));
+    }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  function renderResidue() {
+    var el = document.getElementById("residueBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var rows = levelRows("CowShop", "").filter(function (r) { return r[0].indexOf("Highest") < 0; }).sort(function (a, b) { return b[1] - a[1]; });
+    var html = sysStats([
+      ["Cow reinc. bonus", fmtNum(toNum(deepFind(PARSED, "CowShopReincarnationBonus")))],
+      ["Cow upgrades", rows.length]
+    ]);
+    html += '<p class="sys-note">Milk / residue scaling is a core account-wide multiplier. <b>Buy cows after every Ascension.</b> Your Cow Shop upgrade levels:</p>';
+    html += '<div class="rowlist">' + rows.slice(0, 24).map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  function renderInfinity() {
+    var el = document.getElementById("infinityBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var rows = levelRows("REP3", "Level").sort(function (a, b) { return b[1] - a[1]; });
+    var total = rows.reduce(function (a, r) { return a + r[1]; }, 0);
+    var html = sysStats([["REP upgrades", rows.length], ["Total levels", fmtNum(total)]]);
+    html += '<p class="sys-note">Infinity Corner (Reincarnation upgrades, page 3) — permanent upgrades bought with Reincarnation Points, ranked by your level:</p>';
+    html += '<div class="rowlist">' + rows.map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
+    el.innerHTML = html;
+  }
+
+  // ---- Best Route dashboard (aggregates the top action from every system) ----
+  function renderBestRoute() {
+    var el = document.getElementById("routeBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = '<p class="sys-note">Import your save above and your personalised best-route plan appears here — the single best move in each system, in priority order.</p>'; return; }
+    var items = [];
+    function item(hot, goto, ic, title, what, why) { items.push({ hot: hot, goto: goto, ic: ic, title: title, what: what, why: why }); }
+
+    // Core loop first: your bottleneck is Ascension (reinc level), driven by combat depth × reinc multipliers.
+    var rl = toNum(deepFind(PARSED, "ReincarnationLevel")), req = toNum(deepFind(PARSED, "AscensionReincLevelRequired"));
+    if (rl != null && req) {
+      var pct = Math.min(100, rl / req * 100);
+      var lev = ascensionLevers(), top = lev[0];
+      item(top && top.pct > 5, top ? top.goto : "transcendence", "✨", "Fastest way to Ascend — " + pct.toFixed(1) + "%",
+        top ? (top.label + " (" + (top.pct != null ? "+" + Math.round(top.pct) + "% reinc-exp/level" : "direct reinc-exp multiplier") + ")") : "Reinc level " + fmtNum(rl) + " / " + fmtNum(req),
+        "Simulated from the reincarnation-exp formula — your #1 lever toward " + fmtNum(req) + ". Reinc gain also scales with combat depth, so keep leveling your classes, Skull/Perk combat upgrades & Talents to clear deeper.");
+    }
+    if (LAST.sweetPotato) {
+      var sp = LAST.sweetPotato;
+      item(!!sp.afford, "sweetpotato", "🍠", "Sweet Potato — " + sp.u.n, (sp.afford ? "Buy now" : "Save toward it") + " (Lv " + sp.lv + " · " + fmtNum(sp.cost) + " sweet potatoes)", sp.u.e + " — the sweet-potato upgrade that most speeds Ascension.");
+    }
+    var pkR = toNum(deepFind(PARSED, "PerkReincarnationExpLevel"));
+    if (pkR != null) item(false, "perks", "💀", "Combat perks (Skulls)", "Buy Max: Reincarnation-Exp ⭐, then Attack & HP", "Your core damage engine — deeper clears mean more reinc-exp, and the Reinc-Exp perk is a direct ascension multiplier.");
+    var gn = deepFind(PARSED, "GiantNode") || [], rgn = 0; REINC_GIANT_IDX.forEach(function (i) { rgn += Number(gn[i]) || 0; });
+    if (rgn < 12) item(true, "talents", "🌿", "Talent tree — reincarnation nodes", "Grab the remaining " + (12 - rgn) + " reincarnation Giant Nodes", "Each is a direct ×1.25 to reinc-exp — a top ascension lever from the talent tree.");
+    if (LAST.card) {
+      if (LAST.cardCur > 0) item(true, "cards", "🃏", "Charge a card now", "Charge " + esc(LAST.card.name) + " (" + LAST.cardCur + " charge" + (LAST.cardCur > 1 ? "s" : "") + " ready)", "Top charge-priority, ranked by ascension impact — don't let charges sit unspent.");
+      else item(false, "cards", "🃏", "Next card to charge", esc(LAST.card.name), "Your top charge-priority once a charge is ready, ranked by ascension impact.");
+    }
+    if (LAST.building) {
+      var b = LAST.building;
+      item(false, "buildings", "🏛️", "Upgrade a town building", esc(buildingName(b.ID)) + " (Lv " + b.Level + " → " + b.SoftCapLevel + ")", (BUILDING_EFFECT[b.ID] || "") + " — furthest below its soft cap, the best value.");
+    }
+    if (LAST.teamTop) {
+      var tot = (LAST.teamTotalL10 != null && LAST.teamTotalL10 !== -Infinity) ? "e" + LAST.teamTotalL10.toFixed(0) : "?";
+      item(false, "pets", "🐾", "Run your best expedition teams", "Field the auto-built teams (total damage ≈ " + tot + ")", "Passive income — your strongest pets, each team on your highest-reward expedition." + (LAST.petDmgNotRun && LAST.petDmgNotRun.length ? " (Pet-Damage expedition " + esc(expName(LAST.petDmgNotRun[0].id)) + " isn't running.)" : ""));
+    }
+    if (LAST.portalFloor != null) item(false, "portal", "🌀", "Push your Portal", "Climb past floor " + fmtNum(LAST.portalFloor) + " and keep buying portal-shop levels", "A big multiplier engine.");
+    if (LAST.expShop) {
+      if (LAST.expShop.allMaxed) item(false, "expeditions", "🛒", "Expedition Shop", "Key upgrades maxed — bank tokens (" + fmtNum(LAST.expShop.tokens) + ")", "You've already bought the important expedition-shop upgrades.");
+      else item(!!LAST.expShop.afford, "expeditions", "🛒", "Expedition Shop purchase", "Buy " + esc(LAST.expShop.name) + " — " + fmtNum(LAST.expShop.cost) + " tokens", LAST.expShop.afford ? "You can afford it now." : "Bank tokens toward this — your next key upgrade.");
+    }
+    item(false, "seedshop", "🌱", "Spend Seed points", "Buy Item Rarity, then Portal HP–ATK reduction", "High-value seed spends for pushing portals and gear.");
+    if (LAST.proteinBelow != null) {
+      if (LAST.proteinBelow > 0) item(false, "protein", "🥩", "Level assembly lines", "Upgrade " + LAST.proteinBelow + " assembly line" + (LAST.proteinBelow > 1 ? "s" : "") + " below max", "More Protein feeds your economy.");
+      else item(false, "protein", "🥩", "Assembly lines", "All unlocked lines are maxed" + (LAST.proteinLocked ? " — " + LAST.proteinLocked + " more unlock with progression" : ""), "Nothing to buy here for now.");
+    }
+
+    var head = '<p class="sys-note">Your route, best-first — the single best move in each system, pulled from the pages below. Tap any step to open its page.' + (LAST.cardProfile ? ' Tuned to your phase: <b>' + esc(LAST.cardProfile.label) + '</b>.' : '') + '</p>';
+    el.innerHTML = head + items.map(function (it, i) {
+      return '<button class="route-item' + (it.hot ? " hot" : "") + '" data-goto="' + it.goto + '" type="button">' +
+        '<div class="ric">' + it.ic + '</div>' +
+        '<div class="rmain"><div class="rtitle">' + (i + 1) + ' · ' + esc(it.title) + '</div><div class="rwhat">' + it.what + '</div><div class="rwhy">' + it.why + '</div></div>' +
+        '<div class="rgo">Open →</div></button>';
+    }).join("");
+  }
+
+  // Granular, save-driven "do this now" buy list for the Roadmap tab. Reuses the .route-item
+  // styling (clickable → opens the system page via the delegated [data-goto] handler).
+  function renderLiveActions() {
+    var el = document.getElementById("liveActionsBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = '<p class="sys-note">Import your save on the Home tab and your exact next purchases appear here — named upgrades, buildings, cards, and lines pulled from every system.</p>'; return; }
+    var items = [];
+    function push(hot, goto, ic, tag, action, detail) { items.push({ hot: hot, goto: goto, ic: ic, tag: tag, action: action, detail: detail }); }
+
+    // 1 — Ascension: the single biggest reinc-exp lever right now.
+    var lev = ascensionLevers(), top = lev[0];
+    if (top) push(top.pct != null && top.pct > 5, top.goto, top.ic || "✨", "Ascension lever", top.label, top.detail);
+
+    // 2 — Sweet Potato: the ascension-priority upgrade, named + priced.
+    if (LAST.sweetPotato) { var sp = LAST.sweetPotato;
+      push(!!sp.afford, "sweetpotato", "🍠", "Sweet Potato", "Buy “" + sp.u.n + "”", "Lv " + sp.lv + " · " + fmtNum(sp.cost) + " sweet potatoes" + (sp.afford ? " · affordable now" : " · keep banking") + " — " + sp.u.e); }
+    // 2b — Sweet Potato: cheapest affordable general multiplier (a second concrete buy).
+    if (LAST.spRows) {
+      var aff = LAST.spRows.filter(function (r) { return r.unlocked && r.afford && r.u.id !== 8; }).sort(function (a, b) { return a.cost - b.cost; });
+      if (aff[0]) push(true, "sweetpotato", "🍠", "Sweet Potato", "Buy “" + aff[0].u.n + "”", "Lv " + aff[0].lv + " · " + fmtNum(aff[0].cost) + " sweet potatoes · affordable now — " + aff[0].u.e);
+    }
+
+    // 3 — Card to charge.
+    if (LAST.card) {
+      if (LAST.cardCur > 0) push(true, "cards", "🃏", "Cards", "Charge “" + LAST.card.name + "”", LAST.cardCur + " charge" + (LAST.cardCur > 1 ? "s" : "") + " ready now — top ascension-weighted priority, don’t let charges sit");
+      else push(false, "cards", "🃏", "Cards", "Next charge: “" + LAST.card.name + "”", "Charge it the moment a charge is ready");
+    }
+
+    // 4 — Buildings: up to 3 specific ones below their soft cap. Skip the After Life Altar
+    // if it's already surfaced above as the top Ascension lever (avoids a duplicate row).
+    if (LAST.buildingsBelow && LAST.buildingsBelow.length) {
+      var altarShown = !!(top && /After Life Altar/.test(top.label || ""));
+      var blist = LAST.buildingsBelow.filter(function (b) { return !(altarShown && b.ID === 11); }).slice(0, 3);
+      blist.forEach(function (b, i) {
+        push(i === 0, "buildings", "🏛️", "Town building", "Upgrade “" + buildingName(b.ID) + "”", "Lv " + b.Level + " → soft cap " + b.SoftCapLevel + (BUILDING_EFFECT[b.ID] ? " · " + BUILDING_EFFECT[b.ID] : ""));
+      });
+    }
+
+    // 5 — Assembly lines: named IDs, with #20 (reinc-exp) flagged first.
+    if (LAST.proteinBelowIDs && LAST.proteinBelowIDs.length) {
+      var l20 = LAST.proteinL20;
+      if (l20 && (l20.Level || 0) < (l20.LevelMax || 0)) push(true, "protein", "🧬", "Assembly Line", "Level Assembly Line #20", "Lv " + (l20.Level || 0) + "/" + (l20.LevelMax || 0) + " · multiplies Reincarnation Exp Earned — the one assembly line that speeds Ascension");
+      var others = LAST.proteinBelowIDs.filter(function (id) { return id !== 20; }).slice(0, 8);
+      if (others.length) push(false, "protein", "🥩", "Assembly Lines", "Level " + others.map(function (id) { return "#" + id; }).join(", "), "These unlocked lines are below max — spend Protein to level them for more bonuses");
+    }
+
+    // 6 — Talents: remaining reinc giant nodes (each ×1.25 reinc-exp).
+    var gn = deepFind(PARSED, "GiantNode") || [], rgn = 0; REINC_GIANT_IDX.forEach(function (i) { rgn += Number(gn[i]) || 0; });
+    if (rgn < 12) push(true, "talents", "🌿", "Talents", "Grab " + (12 - rgn) + " Reincarnation Giant Node" + (12 - rgn > 1 ? "s" : ""), "Each is a direct ×1.25 to reinc-exp — a top talent-tree ascension lever");
+
+    // 7 — Skull perks.
+    push(false, "perks", "💀", "Skull perks", "Buy Max: Reincarnation-Exp, then Attack & HP", "Your damage + ascension engine — deeper clears mean more reinc-exp");
+
+    // 8 — Expeditions: frontier zones, pet-damage coverage, shop buy.
+    if (LAST.zoneFrontier && LAST.zoneFrontier.length) {
+      var fz = LAST.zoneFrontier.slice(0, 3).map(function (z) { return (z.name || ("#" + z.id)) + " (" + z.stat + ")"; }).join(", ");
+      push(false, "expeditions", "🗺️", "Zones", "Push frontier zones: " + fz, "Lowest zones grow their permanent account-wide bonus fastest per wave — park strong teams here");
+    }
+    if (LAST.petDmgNotRun && LAST.petDmgNotRun.length) push(true, "expeditions", "🐾", "Expeditions", "Run Pet-Damage expedition: " + expName(LAST.petDmgNotRun[0].id), "Top reward type and not currently running — swap a team onto it");
+    if (LAST.expShop && !LAST.expShop.allMaxed) push(!!LAST.expShop.afford, "expeditions", "🛒", "Expedition Shop", "Buy “" + LAST.expShop.name + "”", "Lv " + LAST.expShop.level + "/" + LAST.expShop.max + " · " + fmtNum(LAST.expShop.cost) + " tokens" + (LAST.expShop.afford ? " · affordable now" : " · keep banking"));
+
+    // 9 — Portal.
+    if (LAST.portalFloor != null) push(false, "portal", "🌀", "Portal", "Push past floor " + fmtNum(LAST.portalFloor), "Keep buying portal-shop levels — a big multiplier engine");
+
+    var head = '<p class="sys-note">Every concrete move the optimizer picked from your save, best-first. A <b style="color:var(--gold)">gold border</b> means you can do it <b>right now</b>; the rest are things to bank toward or keep running. Tap any step to open its page.</p>';
+    el.innerHTML = head + items.map(function (it, i) {
+      return '<button class="route-item' + (it.hot ? " hot" : "") + '" data-goto="' + it.goto + '" type="button">' +
+        '<div class="ric">' + it.ic + '</div>' +
+        '<div class="rmain"><div class="rtitle">' + (i + 1) + ' · ' + esc(it.tag) + '</div><div class="rwhat">' + esc(it.action) + '</div><div class="rwhy">' + it.detail + '</div></div>' +
+        '<div class="rgo">Open →</div></button>';
+    }).join("");
+  }
+
+  function renderSystemTabs() {
+    renderPets(); renderExpeditions(); renderCards(); renderBuildings(); renderEquipment();
+    renderPortal(); renderSeedShop(); renderSweetPotato(); renderTranscendence();
+    renderPerks(); renderTalents(); renderProtein(); renderOutposts(); renderResidue(); renderInfinity();
+    renderBestRoute(); renderLiveActions();
+  }
+
+  // ---- Section switching (sidebar) ----
+  var TABS = ["home", "roadmap", "portal", "seedshop", "sweetpotato", "transcendence", "expeditions", "pets", "cards", "perks", "talents", "buildings", "protein", "outposts", "residue", "infinity", "equipment", "reference"];
+  var sidebarEl = document.getElementById("sidebar");
+  function setTab(name) {
+    if (TABS.indexOf(name) < 0) name = "home";
+    state.tab = name; save();
+    var btns = document.querySelectorAll("#nav button");
+    for (var i = 0; i < btns.length; i++) btns[i].setAttribute("aria-selected", btns[i].dataset.tab === name ? "true" : "false");
+    for (var j = 0; j < TABS.length; j++) {
+      var el = document.getElementById("tab-" + TABS[j]);
+      if (el) el.hidden = (TABS[j] !== name);
+    }
+    if (sidebarEl) sidebarEl.classList.remove("open");
+    window.scrollTo(0, 0);
+  }
+  document.getElementById("nav").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tab]");
+    if (b) setTab(b.dataset.tab);
+  });
+  document.getElementById("menuToggle").addEventListener("click", function () {
+    if (sidebarEl) sidebarEl.classList.toggle("open");
+  });
+  document.addEventListener("click", function (e) {
+    var g = e.target.closest("[data-goto]");
+    if (g) setTab(g.getAttribute("data-goto"));
+  });
+
+  // ---- Init ----
+  load();
+  state.selected = recommendedKey();
+  renderAll();
+  renderSystemTabs();
+  setTab(state.tab);
+})();
+</script>
+
+</body>
+</html>

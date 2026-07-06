@@ -1,0 +1,15 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Node / build scratch (none required to run — the site is a single static file)
+node_modules/
+dist/
+*.log
+
+# Local save files — never commit personal game saves
+fapi-save.txt
+*.save
