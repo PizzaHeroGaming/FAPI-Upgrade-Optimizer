@@ -2236,9 +2236,11 @@
     if (!PARSED) { el.innerHTML = emptyState(); return; }
     var rows = levelRows("REP3", "Level").sort(function (a, b) { return b[1] - a[1]; });
     var total = rows.reduce(function (a, r) { return a + r[1]; }, 0);
-    var html = sysStats([["REP upgrades", rows.length], ["Total levels", fmtNum(total)]]);
-    html += '<p class="sys-note">Infinity Corner (Reincarnation upgrades, page 3) — permanent upgrades bought with Reincarnation Points, ranked by your level:</p>';
-    html += '<div class="rowlist">' + rows.map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
+    var uaLv = toNum(deepFind(PARSED, "REP3UpgradeAllLevel")) || 0;
+    var html = sysStats([["REP upgrades", rows.length], ["Upgrade-All level", fmtNum(uaLv)], ["Total levels", fmtNum(total)]]);
+    html += '<p class="sys-note">Infinity Corner (Reincarnation upgrades, page 3) — permanent upgrades bought with Reincarnation Points that <b>never reset</b>. Each per-stat upgrade is <b>×0.02/level</b>, and (decompiled) <b>Upgrade All multiplies every one of them</b> — so it compounds hardest.</p>';
+    html += '<div class="rec-box"><b>Priority: level “Upgrade All” first</b> (it boosts every other page-3 upgrade, currently Lv ' + fmtNum(uaLv) + '), then pour points into <b>Class Exp</b> and <b>Potato</b> — Class Exp feeds your total class level, the #1 reinc-exp term. Also make sure every cheap base Reincarnation-Shop upgrade (pages 1–2: auto-buyers, Residue ×, Reduce Cow Price) is bought — they\'re one-time and unlock automation.</div>';
+    html += '<div class="sys-h">Your page-3 upgrade levels</div><div class="rowlist">' + rows.map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
     el.innerHTML = html;
   }
 
