@@ -508,6 +508,7 @@
       <div class="nav-group">
         <div class="nav-label">Plan · mid→endgame</div>
         <button data-tab="roadmap" class="edge" aria-selected="false" type="button"><span class="ic">🗺️</span>Roadmap</button>
+        <button data-tab="walkthrough" class="edge" aria-selected="false" type="button"><span class="ic">📜</span>Full Walkthrough</button>
         <button data-tab="portal" class="edge" aria-selected="false" type="button"><span class="ic">🌀</span>Portal</button>
         <button data-tab="seedshop" class="edge" aria-selected="false" type="button"><span class="ic">🌱</span>Seed Shop</button>
         <button data-tab="sweetpotato" class="edge" aria-selected="false" type="button"><span class="ic">🍠</span>Sweet Potato</button>
@@ -749,6 +750,10 @@
   <div class="tabpanel" id="tab-buildings" hidden>
     <div class="sec-head"><h1>Buildings &amp; town</h1><p>All 17 buildings by name, what they boost, and cap status.</p></div>
     <section class="panel"><div class="panel-bd" id="bldBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-walkthrough" hidden>
+    <div class="sec-head"><span class="edgeflag">Decompiled</span><h1>Full Walkthrough</h1><p>The whole game, start to finish — the exact priorities and unlock gates, read straight from the decompiled code.</p></div>
+    <section class="panel"><div class="panel-bd" id="walkBody"></div></section>
   </div>
   <div class="tabpanel" id="tab-farming" hidden>
     <div class="sec-head"><h1>Farming</h1><p>The base crop-production loop — mostly automated.</p></div>
@@ -2282,6 +2287,7 @@
   // ---- Tool Selection grid (gameplayplanner-style page picker, shown on Home) ----
   var TOOLS = [
     { tab: "roadmap", ic: "🗺️", label: "Roadmap" },
+    { tab: "walkthrough", ic: "📜", label: "Full Walkthrough" },
     { tab: "expeditions", ic: "🧭", label: "Expeditions & Zones" },
     { tab: "pets", ic: "🐾", label: "Pets / Teams" },
     { tab: "cards", ic: "🃏", label: "Cards" },
@@ -2353,17 +2359,142 @@
     el.innerHTML = html;
   }
 
+  // ---- Full walkthrough (grounded in the decompiled game: ShowUnlock.cs gates + ReincarnationMain formulas) ----
+  var WALK_PHASES = [
+    { key: "p1", name: "Phase 1 — First climb", range: "Before your 1st Reincarnation", lo: -1, hi: -1 },
+    { key: "p2", name: "Phase 2 — Reincarnation loop", range: "Reincarnating · before Ascension", lo: 0, hi: 0 },
+    { key: "p3", name: "Phase 3 — Early Ascension", range: "Ascension 1–11", lo: 1, hi: 11 },
+    { key: "p4", name: "Phase 4 — Mid Ascension", range: "Ascension 12–29", lo: 12, hi: 29 },
+    { key: "p5", name: "Phase 5 — Late Ascension", range: "Ascension 30–59", lo: 30, hi: 59 },
+    { key: "p6", name: "Phase 6 — Transcendence (T3)", range: "Ascension 60+ · Souls & Artifacts", lo: 60, hi: 9999 }
+  ];
+  function walkPhaseFor(asc, transc) {
+    if (transc > 0) return "p6";
+    if (asc >= 60) return "p6"; if (asc >= 30) return "p5"; if (asc >= 12) return "p4"; if (asc >= 1) return "p3";
+    return "p2"; // reincarnating but not ascended; p1 can't be detected from an imported save (always past it)
+  }
+  function renderWalkthrough() {
+    var el = document.getElementById("walkBody"); if (!el) return;
+    var H = [];
+    // Save-aware "you are here"
+    if (PARSED) {
+      var asc = saNum("AscensionCount"), transc = saNum("Transcendence"), reincLvl = toNum(deepFind(PARSED, "ReincarnationLevel")), reincReq = toNum(deepFind(PARSED, "AscensionReincLevelRequired"));
+      var cur = walkPhaseFor(asc, transc), ph = WALK_PHASES.filter(function (p) { return p.key === cur; })[0];
+      var apct = (reincLvl != null && reincReq) ? Math.min(100, reincLvl / reincReq * 100) : null;
+      H.push('<div class="rec-box" style="border-color:var(--gold)"><b>📍 You are here: ' + ph.name + '</b> — ' + ph.range + '. Ascension <b>#' + fmtNum(asc) + '</b>' + (transc > 0 ? ', <b>Transcended</b>' : '') + (apct != null ? ' · next ascension <b>' + apct.toFixed(1) + '%</b> (reinc ' + fmtNum(reincLvl) + ' / ' + fmtNum(reincReq) + ')' : '') + '. Jump to <b>' + ph.name.split("—")[1].trim() + '</b> below — the earlier phases are done.</div>');
+    } else {
+      H.push('<div class="rec-box">Import your save on the Home tab and this walkthrough will mark exactly which phase you\'re in. Until then, here\'s the whole path start to finish.</div>');
+    }
+
+    // THE ONE RULE
+    H.push('<div class="sys-h">The one rule that governs the whole game</div>');
+    H.push('<p class="sys-note">Everything in FAPI is a climb toward <b>Ascensions</b>, and your speed is one ratio:</p>');
+    H.push('<div class="rec-box" style="font-size:15px"><b>Ascension speed = reincarnation-exp you <span style="color:var(--leaf)">gain</span> ÷ reinc level you <span style="color:var(--russet)">need</span>.</b> Every upgrade in the game either pushes the top up or the bottom down. Once you can see which, you always know what to buy next.</div>');
+
+    // THE ENGINE (decompiled)
+    H.push('<div class="sys-h">The engine <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(decompiled from the game)</span></div>');
+    H.push('<p class="sys-note"><b style="color:var(--leaf)">Reinc-exp you GAIN each tick</b> is a product — so anything that multiplies one factor speeds every ascension by that %:</p>');
+    H.push('<div class="rowlist">' +
+      rowItem(null, "Total class levels (CurrentLevel)", "The dominant base term, with built-in log & level bonuses. Level every class, always.", '<span class="flag good">biggest base</span>') +
+      rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, Reinc-Exp Skull perk, After Life Altar building, the 12 Talent Giant Nodes, cows, Assembly Line #20.", '<span class="flag good">multiplier stack</span>') +
+      rowItem(null, "Time Bonus", "Your idle/offline multiplier — grows +25% per ascension. Idle time is free progress.", '<span class="flag tip">+25%/ascension</span>') +
+      rowItem(null, "Confection level", "A log bonus that rises on autopilot (worm/confection auto-buyers).", '<span class="flag tip">auto</span>') +
+      rowItem(null, "Best world progress", "+0.02% per area — a small nudge to keep pushing depth.", '<span class="flag tip">depth</span>') +
+      '</div>');
+    H.push('<p class="sys-note"><b style="color:var(--russet)">Reinc level you NEED</b> rises each level, but is <b>discounted</b> by three things most players ignore:</p>');
+    H.push('<div class="rowlist">' +
+      rowItem(null, "Total Residue (milk)", "Cuts the requirement via 0.95^(…) — more milk + the Cow Shop “Reinc Exp Reduc” upgrade = a permanent discount. Buy cows every ascension.", '<span class="flag good">discount</span>') +
+      rowItem(null, "Total Expedition hours", "Cuts it via 0.975^(…) scaled by the Expedition-Shop “Reinc Exp Reduc” upgrade. Just keep 8 expeditions running 24/7.", '<span class="flag good">discount</span>') +
+      rowItem(null, "Sweet Potato: Ascension Req. Reduction", "Directly lowers the reinc level you need to ascend — your #1 Sweet-Potato buy.", '<span class="flag good">discount</span>') +
+      '</div>');
+    H.push('<p class="sys-note"><b>Reincarnation Points</b> you bank each ascension ≈ <code>(reinc level ÷ 5 + challenge pts) × (ascension # + 1)</code> — so every extra ascension permanently boosts the points from the next, and <b>Challenges add flat points</b>.</p>');
+
+    // UNLOCK TIMELINE (exact gates)
+    H.push('<div class="sys-h">Unlock timeline <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(exact gates from the game)</span></div>');
+    var GATES = [
+      ["World Area 1-2", "Farming", "the base crop/fries/protein loop"],
+      ["~Area 4 cleared", "Worm Breeding", "worm/confection — feeds reinc-exp"],
+      ["2,500 fries earned", "Contagion (grasshopper)", "permanent resource boosts"],
+      ["~10 min played", "Whack-a-Potato", "a side minigame + its shop"],
+      ["Reincarnate (Area 8)", "Reincarnation + its Shop", "your first real prestige loop"],
+      ["10 billion fries", "Protein / Assembly Lines", "big multiplier lines (incl. #20 = reinc-exp)"],
+      ["Area 20", "Pets", "capture pets for expeditions"],
+      ["Area 26 / first Ascend", "Ascension + Sweet Potato", "the main prestige + its upgrade shop"],
+      ["Ascension 3", "Expeditions & Zones", "passive pet income + auto-clears old areas"],
+      ["Ascension 6", "Cards", "chargeable permanent multipliers"],
+      ["Ascension 12", "Outposts + Town Buildings", "minerals → building bonuses (incl. After Life Altar)"],
+      ["Ascension 20", "Portal", "a major multiplier engine"],
+      ["Ascension 50", "Subclass Talents", "deeper talent tree"],
+      ["Ascension 60", "Transcendence (T3)", "Souls, Artifacts, Seed Shop — the endgame"]
+    ];
+    H.push('<div class="rowlist">' + GATES.map(function (g) {
+      return rowItem(null, g[1], g[2], '<span class="flag tip">' + esc(g[0]) + '</span>');
+    }).join("") + '</div>');
+
+    // PHASE BY PHASE
+    H.push('<div class="sys-h">The walkthrough, phase by phase</div>');
+    function phase(name, range, goal, steps) {
+      return '<div class="rec-box"><b>' + name + '</b> <span style="color:var(--soil-soft)">· ' + range + '</span><p style="margin:6px 0 4px">' + goal + '</p><ul class="rules" style="margin-top:4px">' + steps.map(function (s) { return '<li>' + s + '</li>'; }).join("") + '</ul></div>';
+    }
+    H.push(phase("Phase 1 — First climb", "before your 1st Reincarnation",
+      "Push world areas and get the early systems open. Depth is everything here.",
+      ["Attack to clear areas; die and respawn freely — death unlocks the <b>Skull perks</b>, your core damage shop.",
+       "Level <b>all classes in parallel</b> — every class's levels grant talent points for your current class, and total class level is the #1 reinc-exp term.",
+       "Pick up <b>Farming</b> (Area 2) and let it auto-run. Buy <b>Whack-a-Potato</b> and <b>Worm Breeding</b> when they open.",
+       "Reach <b>Area 8</b> and take your first <b>Reincarnation</b>."]));
+    H.push(phase("Phase 2 — Reincarnation loop", "reincarnating, before Ascension",
+      "Reincarnate repeatedly, each time going deeper. Build the Reincarnation Shop and unlock the rest of the mid-game.",
+      ["Spend Reincarnation Points in the <b>Reincarnation Shop</b> and <b>Infinity Corner (Page 3 comes at Ascension 1)</b>.",
+       "Cross <b>10B fries</b> to open <b>Assembly Lines</b>; reach <b>Area 20</b> to open <b>Pets</b>.",
+       "Keep leveling classes and pushing depth toward <b>Area 26</b> — that opens Ascension."]));
+    H.push(phase("Phase 3 — Early Ascension", "Ascension 1–11",
+      "Ascension is the real game. Your 1st one unlocks a cascade; from here, optimise the gain ÷ need ratio.",
+      ["<b>Ascension 1</b> grants: Reincarnation Page 3, +50% Attack/HP and ×1.1 <i>per ascension</i>, +100% Reinc Points per ascension, +25% Time-Bonus reinc-exp per ascension, and you keep one Challenge per ascension.",
+       "<b>Sweet Potato priority:</b> <b>Ascension Requirement Reduction</b> and <b>Reincarnation Points</b> first — everything else is a flat multiplier.",
+       "<b>Ascension 3 → Expeditions:</b> field 8 teams on your best-reward zones and run them 24/7. Expedition <i>hours</i> permanently discount your ascension requirement.",
+       "<b>Ascension 6 → Cards:</b> charge by ascension weight; the <b>Reincarnation card</b> is a direct reinc-exp multiplier.",
+       "Grab the <b>12 Reincarnation Giant Nodes</b> in the Talent tree — each is a flat <b>×1.25</b> to reinc-exp."]));
+    H.push(phase("Phase 4 — Mid Ascension", "Ascension 12–29",
+      "Stack the multiplier engines. This is where the big compounding starts.",
+      ["<b>Ascension 12 → Outposts + Town:</b> mine minerals and fill buildings to their soft cap. The <b>After Life Altar</b> directly multiplies reinc-exp — prioritise it.",
+       "Level <b>Assembly Line #20</b> (Reincarnation Exp Earned) with Protein — it's a manual lever, unlike the auto lines.",
+       "<b>Ascension 20 → Portal:</b> keep the auto-floor climbing and buy portal-shop levels; from here Portal beats world farming.",
+       "<b>Buy cows after every ascension</b> — residue/milk both multiplies and discounts the requirement."]));
+    H.push(phase("Phase 5 — Late Ascension", "Ascension 30–59",
+      "Smooth, fast ascensions on a fully-built multiplier stack. Push toward Transcendence.",
+      ["Keep every reinc-exp lever maxed: Reinc-Exp perk (Buy Max), After Life Altar, Reinc card, the 12 Giant Nodes, Assembly #20, cows.",
+       "Sweet-Potato <b>ascension-gated tiers unlock every 2 ascensions</b> (32 → 44); buy each the moment it opens.",
+       "<b>Ascension 50 → Subclass Talents</b> open up — a deeper talent layer.",
+       "Clear <b>Challenges</b> when you can — each keeps a permanent reward and adds flat Reinc Points."]));
+    H.push(phase("Phase 6 — Transcendence (T3)", "Ascension 60+ · the endgame",
+      "At Ascension 60 you can Transcend — a T3 prestige that opens the Soul economy, Artifacts, and the Seed Shop.",
+      ["<b>Transcending keeps</b> Achievements, Whack shop, Cow Factory Page 1, pets (& later Rank), Souls, and some QoL — but resets the rest, far harder than an ascension.",
+       "Spend <b>Souls</b> in the Soul Shop (Auto-Quest Completer and QoL first), and lock in <b>Seed Shop</b>: Auto-seed → Item Rarity → Portal HP/ATK reduction.",
+       "From here it's the A60→A71+ endgame band: the same gain ÷ need loop, now with Soul and Artifact multipliers layered on top."]));
+
+    // AUTOMATION
+    H.push('<div class="sys-h">Leave these alone — they run themselves</div>');
+    H.push('<p class="sys-note"><b>Worm Breeding, Confection, the Cow Factory, Farming, and Contagion</b> all run on auto-buyers once unlocked. They feed your economy in the background — don\'t spend attention micromanaging them. Your hands belong on the levers above.</p>');
+
+    // CHALLENGES
+    H.push('<div class="sys-h">Challenges <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(each keeps a permanent reward + flat Reinc Points)</span></div>');
+    var CHALS = ["The Adventurer", "The Hammer", "Greedy", "The Blind", "Double Dragon", "Neo", "First Extinction", "Untalented", "Poor Naked One", "The Tough Thief"];
+    H.push('<p class="sys-note">Ten run-modifier challenges unlock through the mid-game. Clear each once; from Ascension 3 you keep one completed challenge per ascension, and the game auto-clears areas 9 behind your best. In order: <b>' + CHALS.join("</b> · <b>") + '</b>, then the Infinity challenges.</p>');
+
+    el.innerHTML = H.join("");
+  }
+
   function renderSystemTabs() {
     renderPets(); renderExpeditions(); renderCards(); renderBuildings(); renderEquipment();
     renderPortal(); renderSeedShop(); renderSweetPotato(); renderTranscendence();
     renderPerks(); renderTalents(); renderProtein(); renderOutposts(); renderResidue(); renderInfinity();
-    renderFarming(); renderContagion();
+    renderFarming(); renderContagion(); renderWalkthrough();
     renderBestRoute(); renderLiveActions();
     gateNav(); renderToolGrid();
   }
 
   // ---- Section switching (sidebar) ----
-  var TABS = ["home", "roadmap", "portal", "seedshop", "sweetpotato", "transcendence", "expeditions", "pets", "cards", "perks", "talents", "buildings", "protein", "outposts", "residue", "infinity", "equipment", "farming", "contagion", "reference"];
+  var TABS = ["home", "roadmap", "walkthrough", "portal", "seedshop", "sweetpotato", "transcendence", "expeditions", "pets", "cards", "perks", "talents", "buildings", "protein", "outposts", "residue", "infinity", "equipment", "farming", "contagion", "reference"];
   var sidebarEl = document.getElementById("sidebar");
   function setTab(name) {
     if (TABS.indexOf(name) < 0) name = "home";
