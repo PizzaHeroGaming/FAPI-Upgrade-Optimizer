@@ -1470,28 +1470,33 @@
   }
 
   // Pet set synergies (decompiled from PetMain — new PetSpecialBonus(id, BonusID, Additive, Power, [petIDs])).
-  // A set activates when ALL its pets are in EquipedPetID (the 13-slot pet-equip loadout, account-wide, separate from expeditions).
+  // A set activates when ALL its pets are in EquipedPetID (the 6-pet combat team = SlotGround 3 + SlotAir 3, account-wide, separate from expeditions).
   // Each row: [BonusID, Power, ...petIDs].
   var PET_SETS=[[5001,1,1,3],[5001,1,2,5,9],[5001,1,10,15,20],[5001,1,8,17,23],[5001,1,16,27,37],[5001,1,41,45,63],[5002,3,2,4],[5002,3,1,6,7],[5002,3,10,16],[5002,3,3,13,21],[5002,3,14,25,33],[5002,3,36,53,64],[5003,3,1,4],[5003,3,3,5,8],[5003,3,12,14],[5003,3,11,18,29],[5003,3,19,26,35],[5003,3,32,40,51],[5004,1,5,9],[5004,1,11,18],[5004,1,10,15,17],[5004,1,12,19,22],[5004,1,13,24,34],[5004,1,31,56,67],[5005,1,7,3],[5005,1,4,6,11],[5005,1,13,19],[5005,1,14,17,28],[5005,1,15,20,25],[5005,1,37,58,66],[5006,5,6,8],[5006,5,2,7,9],[5006,5,12,18],[5006,5,16,20,27],[5006,5,18,22,23],[5006,5,39,57,60],[5007,10,31,36,39],[5007,10,32,42,47],[5007,10,24,38,45],[5007,10,28,59,64],[5007,10,33,65,70],[5007,10,70,76,81],[5007,10,137,140,143],[5008,10,33,37,40],[5008,10,35,38,49],[5008,10,26,41,50],[5008,10,30,57,69],[5008,10,44,60,61],[5008,10,75,79,80],[5009,10,21,43],[5009,10,28,39,44],[5009,10,30,41,46],[5009,10,42,51,68],[5009,10,34,54,63],[5009,10,46,53,74],[5010,10,29,44],[5010,10,30,34,43],[5010,10,23,36,42],[5010,10,35,53,68],[5010,10,43,55,58],[5010,10,66,86,94],[5011,20,21,32],[5011,20,24,31,40],[5011,20,26,45,48],[5011,20,29,61,62],[5011,20,42,55,73],[5011,20,67,83,97],[5012,20,22,48],[5012,20,25,46,49],[5012,20,27,47,50],[5012,20,38,52,62],[5012,20,55,67,84],[5012,20,73,88,96],[5013,5,55,69],[5013,5,52,65,67],[5013,5,60,71,78],[5013,5,76,85,92],[5013,5,87,93,99],[5013,5,81,89,100],[5014,10,54,70],[5014,10,56,59,66],[5014,10,62,65,72],[5014,10,68,77,86],[5014,10,73,79,92],[5014,10,84,91,103],[5015,10,40,71],[5015,10,47,74,75],[5015,10,71,78,84],[5015,10,79,87,93],[5015,10,85,94,101],[5016,25,45,73],[5016,25,72,76,77],[5016,25,84,92,95],[5016,25,88,91,97],[5016,25,81,100,102],[5017,25,61,79,84],[5017,25,69,86,95],[5017,25,75,91,100],[5018,25,62,80,85],[5018,25,70,88,97],[5018,25,78,83,102],[5018,25,139,141,142],[5019,25,77,96,107],[5019,25,106,119,132],[5019,25,114,134,120],[5019,25,118,101,130],[5019,25,98,115,122],[5020,20,48,94,111],[5020,20,109,113,136],[5020,20,117,137,115],[5020,20,127,99,126],[5020,20,110,121,129],[5021,35,117,116,126],[5021,35,123,108,128]];
   var SET_BONUS_NAMES = { 5001: "Spawn More Potatoes", 5002: "Fewer Potatoes/Wave", 5003: "Potato Spawn Speed", 5004: "Minimum Rarity", 5005: "Base Residue", 5006: "Drop Bonus Cap", 5007: "Expedition Reward", 5008: "Combo Pet Damage", 5009: "Breeding Timer", 5010: "Milk Timer", 5011: "Attack Speed", 5012: "Whack Buff Timer", 5013: "Breeding + Milk Timer", 5014: "Faster Charge Tick", 5015: "Grow Speed", 5016: "Grasshopper Damage", 5017: "Mineral Type Chance", 5018: "Faster Town Build", 5019: "Set Bonus (5019)", 5020: "Set Bonus (5020)", 5021: "Set Bonus (5021)" };
   // Progression value of each set bonus (Expedition Reward & Combo Pet Damage feed the core loop hardest).
   var SET_BONUS_PRIO = { 5007: 100, 5008: 90, 5005: 70, 5016: 60, 5011: 55, 5003: 50, 5006: 48, 5002: 45, 5004: 44, 5001: 40, 5010: 38, 5009: 36, 5013: 34, 5012: 30, 5014: 28, 5015: 26, 5017: 24, 5018: 22, 5019: 20, 5020: 18, 5021: 16 };
   function petSetAnalysis() {
+    // The COMBAT team is SlotGround + SlotAir pets (3 Ground + 3 Air by default) — NOT 13. Sets activate from these equipped pets,
+    // and a pet occupies a slot of its own type, so the solver must respect both the count and the Ground/Air split.
     var equipRaw = deepFind(PARSED, "EquipedPetID") || [];
-    var slots = equipRaw.length || 13;
-    var eqNow = {}; equipRaw.forEach(function (id) { if (id > 0) eqNow[id] = 1; });
     var pets = deepFind(PARSED, "PetsCollection") || [];
+    var gSlots = toNum(deepFind(PARSED, "SlotGround")) || 3, aSlots = toNum(deepFind(PARSED, "SlotAir")) || 3;
+    var eqNow = {}; equipRaw.forEach(function (id) { if (id > 0) eqNow[id] = 1; });
     function owns(id) { var p = pets[id]; return !!(p && (p.BaseDungeonDamage > 0 || p.Level > 0 || p.Rank > 0 || p.Rarity > 0)); }
+    function typ(id) { var p = pets[id]; return p ? p.Type : 0; }
     var active = PET_SETS.filter(function (s) { return s.slice(2).every(function (p) { return eqNow[p]; }); });
-    // Greedy: among sets you fully OWN, fill the equip slots to maximise high-value bonuses (overlap reuses pets).
     var cand = PET_SETS.filter(function (s) { return s.slice(2).every(owns); })
       .sort(function (a, b) { return (SET_BONUS_PRIO[b[0]] || 0) - (SET_BONUS_PRIO[a[0]] || 0) || b[1] - a[1]; });
-    var chosen = {}, chosenArr = [], acted = [];
+    var chosen = {}, g = 0, a = 0, acted = [];
     cand.forEach(function (s) {
-      var pts = s.slice(2), need = pts.filter(function (p) { return !chosen[p]; });
-      if (chosenArr.length + need.length <= slots) { pts.forEach(function (p) { if (!chosen[p]) { chosen[p] = 1; chosenArr.push(p); } }); acted.push(s); }
+      var pts = s.slice(2), ng = 0, na = 0;
+      pts.forEach(function (p) { if (!chosen[p]) { if (typ(p) === 1) ng++; else if (typ(p) === 2) na++; } });
+      if (g + ng <= gSlots && a + na <= aSlots) { pts.forEach(function (p) { chosen[p] = 1; }); g += ng; a += na; acted.push(s); }
     });
-    return { slots: slots, equipped: equipRaw.filter(function (x) { return x > 0; }), active: active, rec: chosenArr, acted: acted };
+    var recG = Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 1; });
+    var recA = Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 2; });
+    return { gSlots: gSlots, aSlots: aSlots, slots: gSlots + aSlots, equipped: equipRaw.filter(function (x) { return x > 0; }), active: active, recG: recG, recA: recA, rec: recG.concat(recA), acted: acted };
   }
 
   function renderPets() {
@@ -1542,18 +1547,18 @@
 
     // ---- Pet Set Synergies (decompiled) ----
     var ss = petSetAnalysis();
-    html += '<div class="sys-h">Pet Set Synergies <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(equip pet combos for permanent bonuses)</span></div>';
-    html += '<p class="sys-note">These are separate from expeditions: the game has a <b>' + ss.slots + '-slot pet-equip loadout</b>, and equipping specific pet combinations activates permanent set bonuses (decompiled from the game). A pet can be equipped <i>and</i> on an expedition, so this is pure free power.</p>';
+    html += '<div class="sys-h">Combat Team &amp; Set Synergies <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(your 6-pet equipped team)</span></div>';
+    html += '<p class="sys-note">Your <b>combat team</b> is <b>' + ss.gSlots + ' Ground + ' + ss.aSlots + ' Air = ' + ss.slots + ' equipped pets</b> (separate from expeditions — a pet can be in both). Equipping the right combinations triggers <b>Special Combo set bonuses</b> (decompiled), which are the main payoff since each pet\'s passive stat bonuses scale with Level and reset every ascension. The challenge: sets cost specific Ground/Air pets, so only a few fit in 6 slots.</p>';
     if (ss.active.length) {
       var at = {}; ss.active.forEach(function (s) { at[s[0]] = (at[s[0]] || 0) + s[1]; });
       html += '<div class="rec-box"><b>Active now (' + ss.active.length + ' set' + (ss.active.length > 1 ? "s" : "") + '):</b> ' + Object.keys(at).map(function (b) { return SET_BONUS_NAMES[b] + " +" + at[b]; }).join(" · ") + '.</div>';
     } else {
-      html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚠ You have 0 set bonuses active.</b> Your ' + ss.slots + ' equip slots aren\'t completing any set — this is free power left on the table.</div>';
+      html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚠ You have 0 set bonuses active.</b> Your equipped combat team isn\'t completing any Special Combo — free power left on the table.</div>';
     }
     if (ss.acted.length) {
       var tot = {}; ss.acted.forEach(function (s) { tot[s[0]] = (tot[s[0]] || 0) + s[1]; });
       LAST.petSets = ss;
-      html += '<div class="rec-box"><b>Best equip loadout (' + ss.rec.length + '/' + ss.slots + ' slots):</b> equip <b>' + ss.rec.map(function (id) { return esc(petName(id)); }).join(", ") + '</b>.<br>→ Activates: ' + Object.keys(tot).sort(function (a, b) { return (SET_BONUS_PRIO[b] || 0) - (SET_BONUS_PRIO[a] || 0); }).map(function (b) { return '<span style="color:var(--leaf)"><b>' + SET_BONUS_NAMES[b] + " +" + tot[b] + '</b></span>'; }).join(" · ") + '.</div>';
+      html += '<div class="rec-box"><b>Best 6-pet combat team (' + ss.recG.length + ' Ground + ' + ss.recA.length + ' Air):</b> Ground <b>' + (ss.recG.map(function (id) { return esc(petName(id)); }).join(", ") || "—") + '</b> · Air <b>' + (ss.recA.map(function (id) { return esc(petName(id)); }).join(", ") || "—") + '</b>.<br>→ Activates: ' + Object.keys(tot).sort(function (a, b) { return (SET_BONUS_PRIO[b] || 0) - (SET_BONUS_PRIO[a] || 0); }).map(function (b) { return '<span style="color:var(--leaf)"><b>' + SET_BONUS_NAMES[b] + " +" + tot[b] + '</b></span>'; }).join(" · ") + '.</div>';
       html += '<div class="rowlist">' + ss.acted.slice().sort(function (a, b) { return (SET_BONUS_PRIO[b[0]] || 0) - (SET_BONUS_PRIO[a[0]] || 0) || b[1] - a[1]; }).map(function (s) {
         var pts = s.slice(2);
         return rowItem(null, SET_BONUS_NAMES[s[0]] + " +" + s[1], "equip " + pts.map(function (id) { return petName(id); }).join(" + "), '<span class="flag good">set</span>');
