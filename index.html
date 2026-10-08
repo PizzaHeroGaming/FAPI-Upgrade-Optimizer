@@ -2095,7 +2095,8 @@
     }
     var pkReinc = toNum(deepFind(PARSED, "PerkReincarnationExpLevel"));
     if (pkReinc != null) out.push({ ic: "💀", label: "Level the Reincarnation-Exp Skull perk", detail: "Lv " + fmtNum(pkReinc) + " · directly multiplies reinc-exp (Buy Max with Skulls)", pct: null, goto: "perks" });
-    out.push({ ic: "🥛", label: "Buy cows after each Ascension", detail: "CowShop reinc bonus lv " + fmtNum(toNum(deepFind(PARSED, "CowShopReincarnationBonus")) || 0) + " · each cow = ×1.01 reinc-exp", pct: 1, goto: "residue" });
+    var asc10 = saNum("AscensionCount") >= 10, cowRLv = toNum(deepFind(PARSED, "CowShopReincarnationBonus")) || 0;
+    out.push({ ic: "🥛", label: asc10 ? "Keep residue income high (cows auto-restore)" : "Buy cows & residue upgrades after Ascension", detail: "CowShop Reinc-Exp bonus ×1.01/level (now Lv " + fmtNum(cowRLv) + " = ×" + Math.pow(1.01, cowRLv).toPrecision(3) + ")" + (asc10 ? " · auto-restores free from Ascension 10, so just farm Residue on expeditions" : " · buy it manually each run until Ascension 10"), pct: 1, goto: "residue", auto: asc10 });
     out.push({ ic: "⚔️", label: "Grow total damage (Perks + Talents + classes)", detail: "deeper combat (CurrentLevel " + fmtNum(toNum(deepFind(PARSED, "CurrentLevel"))) + ") raises reinc-exp — logarithmically, so the multipliers above beat raw damage, but it's the base everything scales on", pct: null, goto: "perks" });
     // Confection Level and the Worm Reincarnation bonus also multiply reinc-exp, but they're driven
     // by auto-buyers (BAU*/BADU* flags = 1 in your save), so they scale passively — surfaced as feeders, not chores.
@@ -2103,12 +2104,11 @@
     if (conf) out.push({ ic: "🍬", label: "Confection Level (auto)", detail: "Lv " + fmtNum(conf) + " · feeds reinc-exp and rises on autopilot — just keep the worm/confection auto-buyers on", pct: null, goto: "residue", auto: true });
     var wr = deepFind(PARSED, "WormReincarnationBonusLevelBD");
     if (wr && bdLog10(wr) > 0) out.push({ ic: "🪱", label: "Worm Reincarnation bonus (auto)", detail: "worm breeding grants a reinc-exp multiplier that scales passively — no action needed while autos are on", pct: null, goto: "residue", auto: true });
-    // Assembly Line 20 (Farming → Assembly) directly multiplies "Reincarnation Exp Earned" (observed in-game).
-    // Unlike the auto production systems, assembly lines are a MANUAL Protein sink — a real decision.
-    var asmAll = deepFind(PARSED, "AssemblerCollection") || [], l20 = null;
-    for (var ai = 0; ai < asmAll.length; ai++) if (asmAll[ai] && asmAll[ai].ID === 20) { l20 = asmAll[ai]; break; }
-    if (l20 && l20.Locked === 1 && (l20.Level || 0) < (l20.LevelMax || 0)) {
-      out.push({ ic: "🧬", label: "Level Assembly Line 20 with Protein", detail: "it multiplies Reincarnation Exp Earned directly · only Lv " + (l20.Level || 0) + "/" + (l20.LevelMax || 0) + " — lots of headroom, and it's a manual Protein sink (not automated)", pct: null, goto: "protein" });
+    // Assembly lines carrying Reinc-Exp (bonus ID 5) multiply reinc-exp via GetAssemblerBonus(5) → ReincarnationBonusesBD.
+    // These are a MANUAL Protein sink — a real decision. Pick the best one to level.
+    var br = reincAssemblerLines().filter(function (l) { return l.active && l.canLevel; })[0];
+    if (br) {
+      out.push({ ic: "🧬", label: "Level Assembly Line #" + br.id + " with Protein", detail: "carries Reinc-Exp ×" + (1 + br.gain).toFixed(2) + "/level · Lv " + br.level + "/" + br.max + " — a manual Protein sink (not automated)", pct: br.gain * 100, goto: "protein" });
     }
     return out.sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
   }
@@ -2137,11 +2137,32 @@
         var flag = L.auto ? '<span class="flag tip">auto</span>' : (L.pct != null ? ('<span class="flag good">+' + Math.round(L.pct) + '%/step</span>') : '<span class="flag tip">multiplier</span>');
         return rowItem(i + 1, L.label, L.detail, flag);
       }).join("") + '</div>';
-      html += '<p class="sys-note"><b>On autopilot:</b> Worm Breeding, Confection, the Cow Factory brewing lines, and Farming (crop plots, Farming Shop, and Contagion) all run on auto-buyers (confirmed on in your save) and passively feed the multipliers above. Don\'t micromanage them. Your active reinc-exp levers are the top rows — After Life Altar, Reincarnation card, the Skull perk, cows after each ascension — plus <b>Assembly Line #20</b> (a manual Protein sink that multiplies Reincarnation Exp Earned).</p>';
+      html += '<p class="sys-note"><b>On autopilot:</b> Worm Breeding, Confection, the Cow Factory brewing lines, and Farming (crop plots, Farming Shop, and Contagion) all run on auto-buyers (confirmed on in your save) and passively feed the multipliers above. Don\'t micromanage them. Your active reinc-exp levers are the top rows — After Life Altar, Reincarnation card, the Skull perk, cows after each ascension — plus the <b>Reinc-Exp Assembly Lines</b> (a manual Protein sink).</p>';
     }
     el.innerHTML = html;
   }
 
+  // Assembler bonus-ID → stat name (BonusIDEnum, decompiled). Each line bonus = (1+Gain)^max(0, Level-(StartingLevel-1)).
+  var ASM_STAT = { 1: "Potato", 2: "Class Exp", 3: "Skull", 4: "Confection", 5: "Reinc-Exp", 6: "Item Rating", 7: "Poop", 8: "Milk", 9: "Whack", 10: "Brewing Exp", 11: "Calcium", 12: "Fermenting Exp", 13: "Residue", 14: "Worm Qty", 15: "Larva Qty", 16: "Larva Eff", 17: "Attack/HP", 18: "Pet Dmg", 19: "Pet Lvl Exp", 20: "Pet Rank Exp", 21: "Card Power", 22: "Card Exp", 23: "Healthy Potato", 24: "Plant Rank Exp", 25: "Plant Harvest", 26: "Plant Final Prod", 27: "Fries", 28: "Protein", 29: "Grasshopper Dmg", 30: "Contagion HP", 31: "Reinc Points", 32: "Plant Growth", 33: "Exp Token", 34: "Mining Exp", 35: "Mining Power", 36: "Build Speed", 37: "Renown", 38: "Sweet Potato", 39: "Skull Powder", 40: "Subclass Exp", 41: "Seed Chunks", 42: "Attack", 43: "HP" };
+  function asmLineStats(a) { // returns [{id,name,gain,start,active}] for an unlocked line
+    return (a.BonusList || []).map(function (b) {
+      return { id: b.ID, name: ASM_STAT[b.ID] || ("#" + b.ID), gain: b.Gain || 0, start: b.StartingLevel || 0, active: (a.Level || 0) >= (b.StartingLevel || 0) };
+    });
+  }
+  // Lines that actually carry Reinc-Exp (bonus ID 5) — the real ascension levers (GetAssemblerBonus(5) feeds ReincarnationBonusesBD).
+  function reincAssemblerLines() {
+    var all = deepFind(PARSED, "AssemblerCollection") || [], out = [];
+    all.forEach(function (a) {
+      if (!a || a.Locked !== 1) return;
+      var b5 = (a.BonusList || []).filter(function (b) { return b.ID === 5; })[0];
+      if (!b5) return;
+      var lv = a.Level || 0, mx = a.LevelMax || 0;
+      out.push({ id: a.ID, level: lv, max: mx, gain: b5.Gain || 0, start: b5.StartingLevel || 0, active: lv >= (b5.StartingLevel || 0), canLevel: lv < mx });
+    });
+    // best lever = active & not-maxed, highest per-level reinc-exp gain
+    out.sort(function (x, y) { return ((y.active && y.canLevel) ? 1 : 0) - ((x.active && x.canLevel) ? 1 : 0) || y.gain - x.gain; });
+    return out;
+  }
   function renderProtein() {
     var el = document.getElementById("proteinBody"); if (!el) return;
     if (!PARSED) { el.innerHTML = emptyState(); return; }
@@ -2149,25 +2170,29 @@
     var asm = all.filter(function (a) { return a && a.Locked === 1; }); // Locked===1 = unlocked for assemblers
     var lockedCount = all.filter(function (a) { return a && a.Locked !== 1; }).length;
     var below = asm.filter(function (a) { return (a.Level || 0) < (a.LevelMax || 0); });
+    var rl = reincAssemblerLines(), bestReinc = rl.filter(function (l) { return l.active && l.canLevel; })[0] || rl.filter(function (l) { return l.canLevel; })[0] || null;
     LAST.proteinBelow = below.length; LAST.proteinLocked = lockedCount;
     LAST.proteinBelowIDs = below.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (a) { return a.ID; });
-    LAST.proteinL20 = (asm.filter(function (a) { return a.ID === 20; })[0] || null);
+    LAST.proteinReinc = bestReinc;
     var html = sysStats([
       ["Protein", bdStr(deepFind(PARSED, "ProteinCurrent"))],
       ["Unlocked lines", asm.length],
       ["At max", (asm.length - below.length) + "/" + asm.length],
-      ["Still locked", lockedCount]
+      ["Reinc-Exp lines", rl.length]
     ]);
-    html += '<p class="sys-note">Assembly Lines (Farming → gear tab) are spent up with <b>Protein</b> — and unlike Farming\'s Production, Contagion, and the Worm/Cow systems (all on auto-buyers), this is a <b>manual</b> sink where your choice matters. Each line stacks several bonuses that unlock at level thresholds; lines below max are your upgrade targets.</p>';
-    // Line 20's bonus "Reincarnation Exp Earned" is a direct ascension multiplier (observed in-game).
-    var l20p = asm.filter(function (a) { return a.ID === 20; })[0];
-    if (l20p && (l20p.Level || 0) < (l20p.LevelMax || 0)) html += '<div class="rec-box"><b>Ascending? Prioritise Line #20</b> — it multiplies <b>Reincarnation Exp Earned</b> directly and is only at Lv ' + (l20p.Level || 0) + '/' + (l20p.LevelMax || 0) + ', so it has the most room to speed your ascension.</div>';
-    if (below.length) html += '<div class="rec-box"><b>' + below.length + " unlocked line" + (below.length > 1 ? "s" : "") + " below max</b> — level them for more Protein.</div>";
+    html += '<p class="sys-note">Assembly Lines (Farming → gear tab) are a <b>manual Protein sink</b> where your choice matters. Each line level multiplies its bonuses by <b>(1 + Gain)</b> (decompiled); a bonus only counts once the line reaches its unlock level. Lines carrying <b>Reinc-Exp</b> are your ascension levers.</p>';
+    if (bestReinc) html += '<div class="rec-box" style="border-color:var(--gold)"><b>Ascending? Level Line #' + bestReinc.id + '</b> — it carries <b>Reinc-Exp ×' + (1 + bestReinc.gain).toFixed(2) + '/level</b>' + (bestReinc.active ? ' (active now)' : ' — unlocks at line level ' + bestReinc.start) + ', currently Lv ' + bestReinc.level + '/' + bestReinc.max + '. Other reinc-exp lines: ' + rl.map(function (l) { return "#" + l.id; }).join(", ") + '.</div>';
+    if (below.length) html += '<div class="rec-box"><b>' + below.length + " unlocked line" + (below.length > 1 ? "s" : "") + " below max</b> — level them for more Protein and bonuses.</div>";
     else html += '<div class="rec-box"><b>All ' + asm.length + ' unlocked assembly lines are maxed.</b>' + (lockedCount ? " " + lockedCount + " more unlock later." : "") + "</div>";
-    html += '<div class="sys-h">Assembly lines</div><div class="rowlist">' + asm.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (a) {
+    html += '<div class="sys-h">Assembly lines <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(what each boosts · active bonuses in green)</span></div><div class="rowlist">' + asm.slice().sort(function (a, b) { return a.ID - b.ID; }).map(function (a) {
       var lv = a.Level || 0, mx = a.LevelMax || 0;
+      var stats = asmLineStats(a).map(function (s) {
+        var lbl = s.name + " ×" + (1 + s.gain).toFixed(s.gain < 0.1 ? 3 : 2);
+        return s.active ? '<span style="color:var(--leaf)">' + lbl + '</span>' : '<span style="color:var(--soil-soft)">' + lbl + ' (Lv' + s.start + ')</span>';
+      }).join(" · ");
+      var reincTag = (a.BonusList || []).some(function (b) { return b.ID === 5; }) ? ' <span class="flag good">Reinc-Exp</span>' : '';
       var flag = lv >= mx ? '<span class="flag good">Max</span>' : '<span class="flag tip">' + lv + "/" + mx + "</span>";
-      return rowItem(null, "Line #" + a.ID, "Level " + lv + " / " + mx, flag);
+      return rowItem(null, "Line #" + a.ID + reincTag, stats, flag);
     }).join("") + "</div>";
     el.innerHTML = html;
   }
@@ -2193,12 +2218,16 @@
     var el = document.getElementById("residueBody"); if (!el) return;
     if (!PARSED) { el.innerHTML = emptyState(); return; }
     var rows = levelRows("CowShop", "").filter(function (r) { return r[0].indexOf("Highest") < 0; }).sort(function (a, b) { return b[1] - a[1]; });
+    var asc = saNum("AscensionCount"), autoCow = saNum("ASCBuyCowNoWorms") > 0, reincLv = toNum(deepFind(PARSED, "CowShopReincarnationBonus")) || 0;
     var html = sysStats([
-      ["Cow reinc. bonus", fmtNum(toNum(deepFind(PARSED, "CowShopReincarnationBonus")))],
+      ["Cow Reinc-Exp bonus", "×" + Math.pow(1.01, reincLv).toPrecision(4) + " (Lv " + fmtNum(reincLv) + ")"],
+      ["Total residue", bdStr(deepFind(PARSED, "TotalResidueBD"))],
       ["Cow upgrades", rows.length]
     ]);
-    html += '<p class="sys-note">Milk / residue scaling is a core account-wide multiplier. <b>Buy cows after every Ascension.</b> Your Cow Shop upgrade levels:</p>';
-    html += '<div class="rowlist">' + rows.slice(0, 24).map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
+    html += '<p class="sys-note">The Cow Shop (bought with <b>Residue</b>) is an account-wide multiplier stack — its <b>Reinc-Exp</b> upgrade is <b>×1.01 per level</b> (decompiled), and your <b>total residue also discounts the reinc level you need to ascend</b>. Both are driven by <b>residue income</b>.</p>';
+    if (asc >= 10) html += '<div class="rec-box"><b>Auto-managed.</b> From Ascension 10, the Cow Shop <b>auto-restores every upgrade to your highest-ever level for free</b> as residue flows in' + (autoCow ? ', and your <b>Buy-Cow</b> ascension perk auto-buys cows from worms' : '') + '. So don\'t micromanage it — just keep <b>residue income</b> high: run expedition teams on <b>Residue-reward</b> zones (it both multiplies reinc-exp and cuts the ascension requirement).</div>';
+    else html += '<div class="rec-box"><b>Buy cows and residue upgrades after every Ascension</b> — until Ascension 10 (when it auto-restores), refresh them manually each run. The Reinc-Exp upgrade is your priority.</div>';
+    html += '<div class="sys-h">Cow Shop upgrade levels</div><div class="rowlist">' + rows.slice(0, 24).map(function (r) { return rowItem(null, r[0], "", fmtNum(r[1])); }).join("") + "</div>";
     el.innerHTML = html;
   }
 
@@ -2308,8 +2337,8 @@
 
     // 5 — Assembly lines: named IDs, with #20 (reinc-exp) flagged first.
     if (LAST.proteinBelowIDs && LAST.proteinBelowIDs.length) {
-      var l20 = LAST.proteinL20;
-      if (l20 && (l20.Level || 0) < (l20.LevelMax || 0)) push(true, "protein", "🧬", "Assembly Line", "Level Assembly Line #20", "Lv " + (l20.Level || 0) + "/" + (l20.LevelMax || 0) + " · multiplies Reincarnation Exp Earned — the one assembly line that speeds Ascension");
+      var rl20 = LAST.proteinReinc;
+      if (rl20 && rl20.canLevel) push(true, "protein", "🧬", "Assembly Line", "Level Assembly Line #" + rl20.id, "Lv " + rl20.level + "/" + rl20.max + " · carries Reinc-Exp ×" + (1 + rl20.gain).toFixed(2) + "/level" + (rl20.active ? "" : " (unlocks at line Lv " + rl20.start + ")") + " — a reinc-exp line that speeds Ascension");
       var others = LAST.proteinBelowIDs.filter(function (id) { return id !== 20; }).slice(0, 8);
       if (others.length) push(false, "protein", "🥩", "Assembly Lines", "Level " + others.map(function (id) { return "#" + id; }).join(", "), "These unlocked lines are below max — spend Protein to level them for more bonuses");
     }
@@ -2496,7 +2525,7 @@
     H.push('<p class="sys-note"><b style="color:var(--leaf)">Reinc-exp you GAIN each tick</b> is a product — so anything that multiplies one factor speeds every ascension by that %:</p>');
     H.push('<div class="rowlist">' +
       rowItem(null, "Total class levels (CurrentLevel)", "The dominant base term, with built-in log & level bonuses. Level every class, always.", '<span class="flag good">biggest base</span>') +
-      rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, Reinc-Exp Skull perk, After Life Altar building, the 12 Talent Giant Nodes, cows, Assembly Line #20.", '<span class="flag good">multiplier stack</span>') +
+      rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, Reinc-Exp Skull perk, After Life Altar building, the 12 Talent Giant Nodes, cows, and the Reinc-Exp Assembly Lines.", '<span class="flag good">multiplier stack</span>') +
       rowItem(null, "Time Bonus", "Your idle/offline multiplier — grows +25% per ascension. Idle time is free progress.", '<span class="flag tip">+25%/ascension</span>') +
       rowItem(null, "Confection level", "A log bonus that rises on autopilot (worm/confection auto-buyers).", '<span class="flag tip">auto</span>') +
       rowItem(null, "Best world progress", "+0.02% per area — a small nudge to keep pushing depth.", '<span class="flag tip">depth</span>') +
@@ -2557,7 +2586,7 @@
     H.push(phase("Phase 4 — Mid Ascension", "Ascension 12–29",
       "Stack the multiplier engines. This is where the big compounding starts.",
       ["<b>Ascension 12 → Outposts + Town:</b> mine minerals and fill buildings to their soft cap. The <b>After Life Altar</b> directly multiplies reinc-exp — prioritise it.",
-       "Level <b>Assembly Line #20</b> (Reincarnation Exp Earned) with Protein — it's a manual lever, unlike the auto lines.",
+       "Level the <b>Reinc-Exp Assembly Lines</b> (the ones carrying bonus “Reinc-Exp”, e.g. #29/#25/#22) with Protein — a manual lever, unlike the auto lines.",
        "<b>Ascension 20 → Portal:</b> keep the auto-floor climbing and buy portal-shop levels; from here Portal beats world farming.",
        "<b>Buy cows after every ascension</b> — residue/milk both multiplies and discounts the requirement."]));
     H.push(phase("Phase 5 — Late Ascension", "Ascension 30–59",
