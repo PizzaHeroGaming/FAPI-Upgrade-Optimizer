@@ -1476,6 +1476,28 @@
   var SET_BONUS_NAMES = { 5001: "Spawn More Potatoes", 5002: "Fewer Potatoes/Wave", 5003: "Potato Spawn Speed", 5004: "Minimum Rarity", 5005: "Base Residue", 5006: "Drop Bonus Cap", 5007: "Expedition Reward", 5008: "Combo Pet Damage", 5009: "Breeding Timer", 5010: "Milk Timer", 5011: "Attack Speed", 5012: "Whack Buff Timer", 5013: "Breeding + Milk Timer", 5014: "Faster Charge Tick", 5015: "Grow Speed", 5016: "Grasshopper Damage", 5017: "Mineral Type Chance", 5018: "Faster Town Build", 5019: "Set Bonus (5019)", 5020: "Set Bonus (5020)", 5021: "Set Bonus (5021)" };
   // Progression value of each set bonus (Expedition Reward & Combo Pet Damage feed the core loop hardest).
   var SET_BONUS_PRIO = { 5007: 100, 5008: 90, 5005: 70, 5016: 60, 5011: 55, 5003: 50, 5006: 48, 5002: 45, 5004: 44, 5001: 40, 5010: 38, 5009: 36, 5013: 34, 5012: 30, 5014: 28, 5015: 26, 5017: 24, 5018: 22, 5019: 20, 5020: 18, 5021: 16 };
+  // Goal-built combat-team presets to SWAP BETWEEN. You can save multiple 6-pet loadouts (Pet Loadout) and switch the active one
+  // for whatever you're doing. Each preset weights its goal set-bonuses first, then fills leftover slots with the next-best sets.
+  var COMBAT_PRESETS = [
+    { name: "Expedition farming", goal: [5007], why: "Run this while your expedition teams are out — lifts every expedition's reward yield." },
+    { name: "Combat / zone push", goal: [5008, 5011, 5016], why: "Run this while actively pushing zones, dungeons or portals — more pet combat damage & attack speed." },
+    { name: "Idle economy", goal: [5005, 5006, 5001, 5003, 5002, 5004], why: "Run this while idle-farming — more potato spawns, residue and drops per wave (lower-impact sets, so only if the above don't apply)." }
+  ];
+  // Type-aware greedy: add a set only if its NEW Ground pets fit remaining Ground slots AND its new Air pets fit Air slots.
+  function solveTeam(cand, prio, gSlots, aSlots, typ) {
+    var ranked = cand.slice().sort(function (a, b) { return (prio[b[0]] || 0) - (prio[a[0]] || 0) || b[1] - a[1]; });
+    var chosen = {}, g = 0, a = 0, acted = [];
+    ranked.forEach(function (s) {
+      var pts = s.slice(2), ng = 0, na = 0;
+      pts.forEach(function (p) { if (!chosen[p]) { if (typ(p) === 1) ng++; else if (typ(p) === 2) na++; } });
+      if (g + ng <= gSlots && a + na <= aSlots) { pts.forEach(function (p) { chosen[p] = 1; }); g += ng; a += na; acted.push(s); }
+    });
+    return {
+      recG: Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 1; }),
+      recA: Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 2; }),
+      acted: acted
+    };
+  }
   function petSetAnalysis() {
     // The COMBAT team is SlotGround + SlotAir pets (3 Ground + 3 Air by default) — NOT 13. Sets activate from these equipped pets,
     // and a pet occupies a slot of its own type, so the solver must respect both the count and the Ground/Air split.
@@ -1486,17 +1508,16 @@
     function owns(id) { var p = pets[id]; return !!(p && (p.BaseDungeonDamage > 0 || p.Level > 0 || p.Rank > 0 || p.Rarity > 0)); }
     function typ(id) { var p = pets[id]; return p ? p.Type : 0; }
     var active = PET_SETS.filter(function (s) { return s.slice(2).every(function (p) { return eqNow[p]; }); });
-    var cand = PET_SETS.filter(function (s) { return s.slice(2).every(owns); })
-      .sort(function (a, b) { return (SET_BONUS_PRIO[b[0]] || 0) - (SET_BONUS_PRIO[a[0]] || 0) || b[1] - a[1]; });
-    var chosen = {}, g = 0, a = 0, acted = [];
-    cand.forEach(function (s) {
-      var pts = s.slice(2), ng = 0, na = 0;
-      pts.forEach(function (p) { if (!chosen[p]) { if (typ(p) === 1) ng++; else if (typ(p) === 2) na++; } });
-      if (g + ng <= gSlots && a + na <= aSlots) { pts.forEach(function (p) { chosen[p] = 1; }); g += ng; a += na; acted.push(s); }
+    var cand = PET_SETS.filter(function (s) { return s.slice(2).every(owns); });
+    // Goal-built presets you can save as separate Pet Loadouts and swap between.
+    var presets = COMBAT_PRESETS.map(function (pre) {
+      var prio = {}; pre.goal.forEach(function (b, i) { prio[b] = 1000 - i; });         // goal bonuses win, in listed order
+      for (var k in SET_BONUS_PRIO) if (!(k in prio)) prio[k] = SET_BONUS_PRIO[k] / 100;  // faint baseline fills leftover slots
+      var r = solveTeam(cand, prio, gSlots, aSlots, typ);
+      return { name: pre.name, why: pre.why, goal: pre.goal, recG: r.recG, recA: r.recA, acted: r.acted };
     });
-    var recG = Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 1; });
-    var recA = Object.keys(chosen).map(Number).filter(function (id) { return typ(id) === 2; });
-    return { gSlots: gSlots, aSlots: aSlots, slots: gSlots + aSlots, equipped: equipRaw.filter(function (x) { return x > 0; }), active: active, recG: recG, recA: recA, rec: recG.concat(recA), acted: acted };
+    var best = solveTeam(cand, SET_BONUS_PRIO, gSlots, aSlots, typ);
+    return { gSlots: gSlots, aSlots: aSlots, slots: gSlots + aSlots, equipped: equipRaw.filter(function (x) { return x > 0; }), active: active, recG: best.recG, recA: best.recA, rec: best.recG.concat(best.recA), acted: best.acted, presets: presets };
   }
 
   function renderPets() {
@@ -1548,22 +1569,24 @@
     // ---- Pet Set Synergies (decompiled) ----
     var ss = petSetAnalysis();
     html += '<div class="sys-h">Combat Team &amp; Set Synergies <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(your 6-pet equipped team)</span></div>';
-    html += '<p class="sys-note">Your <b>combat team</b> is <b>' + ss.gSlots + ' Ground + ' + ss.aSlots + ' Air = ' + ss.slots + ' equipped pets</b> (separate from expeditions — a pet can be in both). Equipping the right combinations triggers <b>Special Combo set bonuses</b> (decompiled), which are the main payoff since each pet\'s passive stat bonuses scale with Level and reset every ascension. The challenge: sets cost specific Ground/Air pets, so only a few fit in 6 slots.</p>';
+    html += '<p class="sys-note">Your <b>combat team</b> is <b>' + ss.gSlots + ' Ground + ' + ss.aSlots + ' Air = ' + ss.slots + ' equipped pets</b> (separate from expeditions — a pet can be in both). Equipping the right combinations triggers <b>Special Combo set bonuses</b> (decompiled), the main payoff since each pet\'s passive stat bonuses scale with Level and reset every ascension. Sets cost specific Ground/Air pets, so only a few fit in 6 slots — meaning <b>no single team is best for everything</b>. Save the goal-built teams below as separate <b>Pet Loadouts</b> and swap the active one for what you\'re doing.</p>';
+    LAST.petSets = ss;
     if (ss.active.length) {
       var at = {}; ss.active.forEach(function (s) { at[s[0]] = (at[s[0]] || 0) + s[1]; });
       html += '<div class="rec-box"><b>Active now (' + ss.active.length + ' set' + (ss.active.length > 1 ? "s" : "") + '):</b> ' + Object.keys(at).map(function (b) { return SET_BONUS_NAMES[b] + " +" + at[b]; }).join(" · ") + '.</div>';
     } else {
-      html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚠ You have 0 set bonuses active.</b> Your equipped combat team isn\'t completing any Special Combo — free power left on the table.</div>';
+      html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚠ You have 0 set bonuses active.</b> Your equipped combat team isn\'t completing any Special Combo — free power left on the table. Equip one of the presets below.</div>';
     }
-    if (ss.acted.length) {
-      var tot = {}; ss.acted.forEach(function (s) { tot[s[0]] = (tot[s[0]] || 0) + s[1]; });
-      LAST.petSets = ss;
-      html += '<div class="rec-box"><b>Best 6-pet combat team (' + ss.recG.length + ' Ground + ' + ss.recA.length + ' Air):</b> Ground <b>' + (ss.recG.map(function (id) { return esc(petName(id)); }).join(", ") || "—") + '</b> · Air <b>' + (ss.recA.map(function (id) { return esc(petName(id)); }).join(", ") || "—") + '</b>.<br>→ Activates: ' + Object.keys(tot).sort(function (a, b) { return (SET_BONUS_PRIO[b] || 0) - (SET_BONUS_PRIO[a] || 0); }).map(function (b) { return '<span style="color:var(--leaf)"><b>' + SET_BONUS_NAMES[b] + " +" + tot[b] + '</b></span>'; }).join(" · ") + '.</div>';
-      html += '<div class="rowlist">' + ss.acted.slice().sort(function (a, b) { return (SET_BONUS_PRIO[b[0]] || 0) - (SET_BONUS_PRIO[a[0]] || 0) || b[1] - a[1]; }).map(function (s) {
-        var pts = s.slice(2);
-        return rowItem(null, SET_BONUS_NAMES[s[0]] + " +" + s[1], "equip " + pts.map(function (id) { return petName(id); }).join(" + "), '<span class="flag good">set</span>');
-      }).join("") + "</div>";
-    }
+    (ss.presets || []).forEach(function (pre) {
+      if (!pre.acted.length) return;
+      var tot = {}; pre.acted.forEach(function (s) { tot[s[0]] = (tot[s[0]] || 0) + s[1]; });
+      var curSet = {}; ss.equipped.forEach(function (id) { curSet[id] = 1; });
+      var isActive = pre.recG.concat(pre.recA).every(function (id) { return curSet[id]; });
+      html += '<div class="rec-box"><b>' + esc(pre.name) + '</b>' + (isActive ? ' <span class="flag good">equipped now</span>' : '') + ' — ' + pre.why +
+        '<br><b>Ground:</b> ' + (pre.recG.map(function (id) { return esc(petName(id)); }).join(", ") || "—") +
+        ' · <b>Air:</b> ' + (pre.recA.map(function (id) { return esc(petName(id)); }).join(", ") || "—") +
+        '<br>→ Activates: ' + Object.keys(tot).sort(function (a, b) { return (SET_BONUS_PRIO[b] || 0) - (SET_BONUS_PRIO[a] || 0); }).map(function (b) { return '<span style="color:var(--leaf)"><b>' + SET_BONUS_NAMES[b] + " +" + tot[b] + '</b></span>'; }).join(" · ") + '.</div>';
+    });
 
     html += petBlock("Best Ground pets", ground.slice(0, 8));
     html += petBlock("Best Air pets", air.slice(0, 8));
