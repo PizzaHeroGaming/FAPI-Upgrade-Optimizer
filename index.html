@@ -349,6 +349,7 @@
   .nav { padding: 10px 10px 0; }
   .nav-group { margin-bottom: 14px; }
   .nav-label { font-family: var(--disp); text-transform: uppercase; letter-spacing: .18em; font-size: 10px; font-weight: 700; color: var(--soil-soft); padding: 0 8px 6px; }
+  .nav button[hidden], .nav-group[hidden] { display: none !important; }
   .nav button {
     display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
     background: transparent; border: none; color: var(--soil-soft);
@@ -447,6 +448,17 @@
   .team-row .rval { font-family: var(--mono); font-size: 12.5px; color: var(--gold); font-variant-numeric: tabular-nums; }
 
   /* ---- Best Route dashboard ---- */
+  .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; }
+  .tool-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--kraft-hi); cursor: pointer; transition: border-color .12s, background .12s, transform .12s; font-family: var(--body); color: var(--soil); min-height: 94px; }
+  .tool-tile:hover { border-color: var(--russet); background: var(--kraft-lo); transform: translateY(-1px); }
+  .tool-tile .tt-ic { font-size: 30px; line-height: 1; }
+  .tool-tile .tt-lb { font-size: 12.5px; font-weight: 600; text-align: center; letter-spacing: .01em; text-wrap: balance; }
+  .tool-locked { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .tool-locked .tl-head { font-family: var(--disp); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 700; color: var(--soil-soft); margin-bottom: 8px; }
+  .tool-locked .tl-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tool-locked .tl-item { font-size: 12px; color: var(--soil-soft); background: var(--kraft); border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; }
+  .tool-locked .tl-item em { font-style: normal; opacity: .7; }
+  .tool-locked .tl-ic { margin-right: 5px; filter: grayscale(1); opacity: .55; }
   .route-item { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--kraft-hi); margin-bottom: 8px; cursor: pointer; transition: border-color .12s, background .12s; text-align: left; width: 100%; font-family: var(--body); }
   .route-item:hover { border-color: var(--russet); background: var(--kraft-lo); }
   .route-item .ric { font-size: 22px; width: 30px; text-align: center; }
@@ -509,6 +521,8 @@
         <button data-tab="perks" aria-selected="false" type="button"><span class="ic">💀</span>Perks (combat)</button>
         <button data-tab="talents" aria-selected="false" type="button"><span class="ic">🌿</span>Talents</button>
         <button data-tab="buildings" aria-selected="false" type="button"><span class="ic">🏛️</span>Buildings</button>
+        <button data-tab="farming" aria-selected="false" type="button"><span class="ic">🌾</span>Farming</button>
+        <button data-tab="contagion" aria-selected="false" type="button"><span class="ic">🦠</span>Contagion</button>
         <button data-tab="protein" aria-selected="false" type="button"><span class="ic">🥩</span>Protein</button>
         <button data-tab="outposts" aria-selected="false" type="button"><span class="ic">⛏️</span>Outposts</button>
         <button data-tab="residue" aria-selected="false" type="button"><span class="ic">🥛</span>Residue &amp; cows</button>
@@ -529,7 +543,7 @@
   <div class="tabpanel" id="tab-home">
     <div class="sec-head">
       <h1>Potato War Optimizer</h1>
-      <p>A save-driven companion for <em>Farmer Against Potatoes Idle</em>, modeled on <a href="https://www.gameplayplanner.com" target="_blank" rel="noopener">gameplayplanner</a> — extended through the mid-game and the Transcendence endgame it doesn't cover. Import your save, then use the sections on the left.</p>
+      <p>A save-driven companion for <em>Farmer Against Potatoes Idle</em>, modeled on <a href="https://www.gameplayplanner.com" target="_blank" rel="noopener">gameplayplanner</a> — extended through the mid-game and the Transcendence endgame it doesn't cover. Import your save, then pick a tool below — the grid only shows the systems your save has actually unlocked.</p>
     </div>
     <section class="panel">
       <div class="panel-hd"><h2>Import your save</h2><span class="note">auto-detects everything</span></div>
@@ -543,6 +557,13 @@
         </div>
         <p class="imp-privacy">🔒 Parsed entirely in your browser — your save never leaves your device.</p>
         <div id="detected" class="detected" hidden></div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-hd"><h2>Tools</h2><span class="note">pick a system · only what your save has unlocked</span></div>
+      <div class="panel-bd">
+        <div class="tool-grid" id="toolGrid"></div>
+        <div class="tool-locked" id="toolLocked" hidden></div>
       </div>
     </section>
     <section class="panel">
@@ -728,6 +749,14 @@
   <div class="tabpanel" id="tab-buildings" hidden>
     <div class="sec-head"><h1>Buildings &amp; town</h1><p>All 17 buildings by name, what they boost, and cap status.</p></div>
     <section class="panel"><div class="panel-bd" id="bldBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-farming" hidden>
+    <div class="sec-head"><h1>Farming</h1><p>The base crop-production loop — mostly automated.</p></div>
+    <section class="panel"><div class="panel-bd" id="farmingBody"></div></section>
+  </div>
+  <div class="tabpanel" id="tab-contagion" hidden>
+    <div class="sec-head"><h1>Contagion</h1><p>The grasshopper allocation system and its permanent wave bonuses.</p></div>
+    <section class="panel"><div class="panel-bd" id="contagionBody"></div></section>
   </div>
   <div class="tabpanel" id="tab-protein" hidden>
     <div class="sec-head"><h1>Protein &amp; assembly</h1><p>Assembly lines and which are below max.</p></div>
@@ -2207,15 +2236,134 @@
     }).join("");
   }
 
+  // ---- Save-gated unlock system (decompiled from ShowUnlock.cs — the game's own SA*Unlock flags) ----
+  function saNum(k) { return toNum(deepFind(PARSED, k)) || 0; }
+  var SECTION_GATE = {
+    sweetpotato:   { flag: "SAAscensionUnlock", at: "Ascension (reach World 26)" },
+    transcendence: { test: function () { return saNum("Transcendence") > 0 || saNum("AscensionCount") >= 60; }, at: "Ascension 60" },
+    seedshop:      { test: function () { return saNum("Transcendence") > 0; }, at: "Transcend (T3)" },
+    expeditions:   { flag: "SAExpeditionUnlock", at: "Ascension 3" },
+    pets:          { flag: "SAPetUnlock", at: "World Area 20" },
+    cards:         { flag: "SACardUnlock", at: "Ascension 6" },
+    talents:       { flag: "SATalentUnlock", at: "Total class level 10" },
+    buildings:     { flag: "SAOutpostUnlock", at: "Ascension 12" },
+    protein:       { flag: "SAAssemblyUnlock", at: "10B fries earned" },
+    outposts:      { flag: "SAOutpostUnlock", at: "Ascension 12" },
+    residue:       { flag: "SACowUnlock", at: "Unlock the Cow Factory" },
+    infinity:      { flag: "SAReincUnlock", at: "Reincarnate once" },
+    portal:        { flag: "SAPortalUnlock", at: "Ascension 20" },
+    farming:       { flag: "SAFarmingUnlock", at: "World Area 2" },
+    contagion:     { flag: "SAGrasshopperUnlock", at: "2,500 fries earned" }
+    // home, roadmap, reference, equipment, perks: always available (core)
+  };
+  function sectionGate(name) {
+    var g = SECTION_GATE[name];
+    if (!g) return { unlocked: true };        // always-on tool
+    if (!PARSED) return { unlocked: true };   // before a save is loaded, show everything
+    var ok = g.test ? g.test() : saNum(g.flag) === 1;
+    return { unlocked: ok, at: g.at };
+  }
+  // Hide locked sidebar buttons; collapse empty nav groups.
+  function gateNav() {
+    var btns = document.querySelectorAll("#nav button[data-tab]");
+    for (var i = 0; i < btns.length; i++) {
+      var name = btns[i].dataset.tab;
+      btns[i].hidden = !sectionGate(name).unlocked;
+    }
+    var groups = document.querySelectorAll("#nav .nav-group");
+    for (var j = 0; j < groups.length; j++) {
+      var vis = groups[j].querySelectorAll("button[data-tab]:not([hidden])").length;
+      groups[j].hidden = vis === 0;
+    }
+    // if the active tab just became locked, fall back to Home
+    if (PARSED && state.tab && !sectionGate(state.tab).unlocked) setTab("home");
+  }
+
+  // ---- Tool Selection grid (gameplayplanner-style page picker, shown on Home) ----
+  var TOOLS = [
+    { tab: "roadmap", ic: "🗺️", label: "Roadmap" },
+    { tab: "expeditions", ic: "🧭", label: "Expeditions & Zones" },
+    { tab: "pets", ic: "🐾", label: "Pets / Teams" },
+    { tab: "cards", ic: "🃏", label: "Cards" },
+    { tab: "farming", ic: "🌾", label: "Farming" },
+    { tab: "contagion", ic: "🦠", label: "Contagion" },
+    { tab: "protein", ic: "🥩", label: "Protein / Assembly" },
+    { tab: "residue", ic: "🥛", label: "Residue / Milk" },
+    { tab: "infinity", ic: "♾️", label: "Infinity Corner" },
+    { tab: "outposts", ic: "⛏️", label: "Outposts" },
+    { tab: "buildings", ic: "🏛️", label: "Buildings" },
+    { tab: "sweetpotato", ic: "🍠", label: "Sweet Potato" },
+    { tab: "portal", ic: "🌀", label: "Portal" },
+    { tab: "perks", ic: "💀", label: "Perks" },
+    { tab: "talents", ic: "🌿", label: "Talents" },
+    { tab: "equipment", ic: "⚔️", label: "Equipment" },
+    { tab: "transcendence", ic: "✨", label: "Transcendence" },
+    { tab: "seedshop", ic: "🌱", label: "Seed Shop" },
+    { tab: "reference", ic: "📖", label: "Guides" }
+  ];
+  function renderToolGrid() {
+    var el = document.getElementById("toolGrid"); if (!el) return;
+    var unlocked = [], locked = [];
+    TOOLS.forEach(function (t) { (sectionGate(t.tab).unlocked ? unlocked : locked).push(t); });
+    var html = unlocked.map(function (t) {
+      return '<button class="tool-tile" data-goto="' + t.tab + '" type="button"><span class="tt-ic">' + t.ic + '</span><span class="tt-lb">' + esc(t.label) + '</span></button>';
+    }).join("");
+    el.innerHTML = html;
+    var lockEl = document.getElementById("toolLocked");
+    if (lockEl) {
+      if (PARSED && locked.length) {
+        lockEl.hidden = false;
+        lockEl.innerHTML = '<div class="tl-head">Locked — unlocks as you progress</div><div class="tl-list">' + locked.map(function (t) {
+          return '<span class="tl-item"><span class="tl-ic">' + t.ic + '</span>' + esc(t.label) + ' <em>· ' + esc(sectionGate(t.tab).at || "later") + '</em></span>';
+        }).join("") + '</div>';
+      } else { lockEl.hidden = true; lockEl.innerHTML = ""; }
+    }
+  }
+
+  function renderFarming() {
+    var el = document.getElementById("farmingBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var prestige = toNum(deepFind(PARSED, "FarmingPrestigeDone"));
+    var autoPlot = toNum(deepFind(PARSED, "FarmingShopAutoPlotBought"));
+    var autoBuy = toNum(deepFind(PARSED, "FarmingShopAutoBuyImprovementOnPrestige"));
+    var html = sysStats([
+      ["Farming prestige", fmtNum(prestige)],
+      ["Protein (Pr)", bdStr(deepFind(PARSED, "ProteinCurrent"))],
+      ["Auto-plots bought", fmtNum(autoPlot)],
+      ["Auto-buy on prestige", autoBuy ? "ON" : "off"]
+    ]);
+    html += '<p class="sys-note">Farming is the base production loop — crop plots grow potatoes, fries, and protein that feed everything downstream. Your save shows it running on <b>auto-plant + auto-buy</b>, so it needs no hands-on play.</p>';
+    html += '<div class="rec-box"><b>It runs itself — leave it.</b> The only real levers are the <b>Plant Boost Corner</b> upgrades (buy them when idle fries pile up) and <b>Farming Prestige</b> (prestige when your plant levels stall; your auto-buyer re-buys improvements each time). The downstream outputs — Protein and Fries — are what matter, and those surface in the <b>Protein / Assembly</b> and <b>Contagion</b> tools.</div>';
+    el.innerHTML = html;
+  }
+
+  function renderContagion() {
+    var el = document.getElementById("contagionBody"); if (!el) return;
+    if (!PARSED) { el.innerHTML = emptyState(); return; }
+    var cleared = toNum(deepFind(PARSED, "ACUContagionCleared"));
+    var alloc = deepFind(PARSED, "FarmingShopUniqueContagionHP") || [];
+    var allocOn = alloc.filter(function (x) { return x > 0; }).length;
+    var html = sysStats([
+      ["Contagion waves cleared", fmtNum(cleared)],
+      ["Unique bonuses active", allocOn + " / " + (alloc.length || "?")],
+      ["Grasshopper unlocked", saNum("SAGrasshopperUnlock") ? "yes" : "no"]
+    ]);
+    html += '<p class="sys-note">Contagion is the grasshopper mini-system: you allocate a shared pool across resources, and each cleared wave permanently boosts one of them (worm qty, fries, class exp, protein, and more). Huge multipliers, but it advances on its own as you play.</p>';
+    html += '<div class="rec-box"><b>Spread the allocation, then let it ride.</b> Keep each resource toggle on so every bonus keeps climbing — there\'s no single "best" split, and the waves clear passively. Its outputs feed your fries/worm/protein economy, which the other tools already optimise.</div>';
+    el.innerHTML = html;
+  }
+
   function renderSystemTabs() {
     renderPets(); renderExpeditions(); renderCards(); renderBuildings(); renderEquipment();
     renderPortal(); renderSeedShop(); renderSweetPotato(); renderTranscendence();
     renderPerks(); renderTalents(); renderProtein(); renderOutposts(); renderResidue(); renderInfinity();
+    renderFarming(); renderContagion();
     renderBestRoute(); renderLiveActions();
+    gateNav(); renderToolGrid();
   }
 
   // ---- Section switching (sidebar) ----
-  var TABS = ["home", "roadmap", "portal", "seedshop", "sweetpotato", "transcendence", "expeditions", "pets", "cards", "perks", "talents", "buildings", "protein", "outposts", "residue", "infinity", "equipment", "reference"];
+  var TABS = ["home", "roadmap", "portal", "seedshop", "sweetpotato", "transcendence", "expeditions", "pets", "cards", "perks", "talents", "buildings", "protein", "outposts", "residue", "infinity", "equipment", "farming", "contagion", "reference"];
   var sidebarEl = document.getElementById("sidebar");
   function setTab(name) {
     if (TABS.indexOf(name) < 0) name = "home";
