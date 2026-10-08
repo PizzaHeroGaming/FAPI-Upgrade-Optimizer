@@ -1591,7 +1591,7 @@
   var EXP_SHOP_FLAT = { GroundSlot: 75, AirSlot: 300, AutoRestart: 500, AdditionalResource: 60, CardCharge: 1500 };
   var EXP_SHOP_PRIO = ["PetDamage", "MinRating", "MinRarity", "ChargeTransfertPower", "CardCharge", "AttackHP", "PetDropChance", "EquipmentBonusOnRarity", "ExpeditionScalingReduction", "PetLevelScalingReduction", "AdditionalResource", "OutpostLimit", "TownRenownBonus", "EnhancingCostReduction", "OutpostChance", "ImprovedMining", "OutpostLevel"];
   function expShopLevel(n) { return toNum(deepFind(PARSED, "ExpeShop" + n + "Level")) || 0; }
-  function expShopNextCost(n) { var u = EXP_SHOP[n]; if (!u) return null; var lv = expShopLevel(n); if (u.base && u.mult) return Math.round(u.base * Math.pow(u.mult, lv)); if (u.la != null) return u.la + u.lb * lv; if (EXP_SHOP_FLAT[n] != null) return EXP_SHOP_FLAT[n]; return null; }
+  function expShopNextCost(n) { var u = EXP_SHOP[n]; if (!u) return null; var lv = expShopLevel(n); if (n === "MinRarity") return Math.round(25 * Math.pow(Math.min(2 + lv, 4), lv)); if (u.base && u.mult) return Math.round(u.base * Math.pow(u.mult, lv)); if (u.la != null) return u.la + u.lb * lv; if (EXP_SHOP_FLAT[n] != null) return EXP_SHOP_FLAT[n]; return null; }
   function bestExpShopBuy() {
     var tokens = toNum(deepFind(PARSED, "ExpeditionToken")) || 0;
     // Only recommend a category that's actually UNLOCKED: a missing save key means you haven't
@@ -1601,13 +1601,23 @@
     var n = pending[0], u = EXP_SHOP[n], cost = expShopNextCost(n);
     return { name: humanize(n), level: expShopLevel(n), max: u.max, cost: cost, afford: cost != null && cost <= tokens, tokens: tokens };
   }
-  var PORTAL_UP = {"0":[450,0.05,30,25],"1":[1350,0.05,40,25],"2":[7500,0.05,50,25],"3":[15,0.075,25,25],"4":[550,0.075,35,50],"5":[975,0.075,45,75],"6":[350,0.05,30,50],"7":[950,0.05,40,50],"8":[10000,0.05,50,50],"9":[750,1,30,10],"10":[1250,1,55,10],"11":[1300,1,99,10],"15":[30,0.01,25,25],"16":[650,0.01,35,25],"17":[1500,0.01,45,25],"18":[40,0.00025,20,20],"19":[650,0.00025,45,20],"21":[100,0.05,30,25],"22":[900,0.05,40,25],"23":[5000,0.05,50,25],"24":[35,0.02,25,50],"25":[600,0.02,35,50],"26":[1200,0.02,45,50],"27":[200,0.1,30,25],"28":[850,0.1,40,25],"29":[6000,0.1,50,25],"36":[10,0.15,20,25],"37":[500,0.15,35,25],"38":[1400,0.15,45,25],"57":[175,0.1,35,25],"71":[25,0.015,30,75]};
+  // Full decompiled portal-shop dictionary (PortalShop.cs). index → [priceMulti, boni, unlockAscension, maxLevel].
+  // Price = priceMulti × (level+1). unlockAsc 99 = special/hidden; 100 = requires Transcendence.
+  var PORTAL_UP={"0":[450,0.05,30,25],"1":[1350,0.05,40,25],"2":[7500,0.05,50,25],"3":[15,0.075,25,25],"4":[550,0.075,35,50],"5":[975,0.075,45,75],"6":[350,0.05,30,50],"7":[950,0.05,40,50],"8":[10000,0.05,50,50],"9":[750,1,30,10],"10":[1250,1,55,10],"11":[1300,1,99,10],"12":[500,1,20,1],"13":[1250,1,25,1],"14":[10000,1,99,1],"15":[30,0.01,25,25],"16":[650,0.01,35,25],"17":[1500,0.01,45,25],"18":[40,0.00025,20,20],"19":[650,0.00025,45,20],"20":[13,0.00025,99,20],"21":[1500,0.015,40,50],"22":[2250,0.015,50,50],"23":[15000,0.015,60,50],"24":[300000,0.025,100,100],"25":[750,150,30,1],"26":[10000,150,40,1],"27":[75000,150,99,1],"28":[75,0.025,20,10],"29":[500,0.025,30,25],"30":[650,0.025,40,75],"31":[350,1,20,1],"32":[2500,1,35,1],"33":[50000,1,50,1],"34":[75,0.015,25,20],"35":[650,0.015,35,20],"36":[8500,0.015,50,20],"37":[10,0.15,20,25],"38":[850,0.15,35,25],"39":[2750,0.15,45,25],"40":[350,0.002,30,75],"41":[725,0.002,40,75],"42":[2750,0.002,50,75],"43":[25,0.002,25,125],"44":[750,0.002,35,125],"45":[2500,0.002,50,125],"46":[175000,1,50,1],"47":[10,1,99,1],"48":[100,1,99,1],"49":[750,1,20,1],"50":[5,1,99,1],"51":[10,1,99,1],"52":[25,1,20,5],"53":[17500,1,99,5],"54":[100,1,99,5],"55":[50,0.015,20,25],"56":[750,0.015,35,50],"57":[3350,0.015,50,75],"58":[175,0.1,30,25],"59":[2500,0.1,50,25],"60":[10,0.1,99,25],"61":[12050,1,40,1],"62":[125000,1,50,1],"63":[250000,1,60,1],"64":[175,0.05,30,25],"65":[2500,0.05,50,25],"66":[10,0.05,99,25],"67":[12050,1,40,1],"68":[125000,1,50,1],"69":[50,1,99,1],"70":[5,0.015,20,75],"71":[15,0.015,25,75],"72":[25,0.015,30,75],"73":[2500,0.01,40,10],"74":[6500,0.01,50,25],"75":[7500,0.01,60,50],"76":[250000,0.01,100,50],"77":[350,0.05,25,1],"78":[1200,0.01,30,25],"79":[3500,0.01,40,25],"80":[7500,0.01,50,20]};
   function megaSeedsNum() { var v = deepFind(PARSED, "megaSeeds"); if (!v) return 0; if (typeof v === "object" && v.mantissa != null) return v.mantissa * Math.pow(10, v.exponent || 0); return Number(v) || 0; }
   function bestPortalBuy() {
-    var lvls = deepFind(PARSED, "portalShopLevels") || [], asc = toNum(deepFind(PARSED, "AscensionCount")) || 0, mega = megaSeedsNum();
+    var lvls = deepFind(PARSED, "portalShopLevels") || [], asc = toNum(deepFind(PARSED, "AscensionCount")) || 0, tr = toNum(deepFind(PARSED, "Transcendence")) || 0, mega = megaSeedsNum();
     var avail = [];
-    for (var k in PORTAL_UP) { var a = PORTAL_UP[k], pm = a[0], boni = a[1], unlAsc = a[2], mx = a[3], lv = Number(lvls[k]) || 0; if (asc < unlAsc || lv >= mx) continue; var price = pm * (lv + 1); avail.push({ i: +k, boni: boni, price: price, lv: lv, max: mx, afford: price <= mega, val: boni / price }); }
-    var aff = avail.filter(function (a) { return a.afford; }).sort(function (a, b) { return b.val - a.val; });
+    for (var k in PORTAL_UP) {
+      var a = PORTAL_UP[k], pm = a[0], boni = a[1], unlAsc = a[2], mx = a[3], lv = Number(lvls[k]) || 0;
+      if (unlAsc === 99) continue;                                  // special/hidden — not a normal purchase
+      if (unlAsc === 100 ? tr <= 0 : asc < unlAsc) continue;        // 100 requires Transcendence; else needs the ascension
+      if (lv >= mx) continue;                                       // maxed
+      var price = pm * (lv + 1);
+      avail.push({ i: +k, boni: boni, price: price, lv: lv, max: mx, afford: price <= mega, pct: boni < 1, val: boni / price });
+    }
+    // Rank "best value" only among comparable %/level multiplier upgrades (boni < 1); the boni≥1 ones are special unlocks.
+    var aff = avail.filter(function (a) { return a.pct && a.afford; }).sort(function (a, b) { return b.val - a.val; });
     var cheap = avail.slice().sort(function (a, b) { return a.price - b.price; });
     return { mega: mega, count: avail.length, best: aff[0] || null, cheapest: cheap[0] || null };
   }
@@ -1826,7 +1836,7 @@
   var CARD_PERMA = {17:[1.2,1.5,0.0075],1:[1.2,1.3,0.009],2:[1.2,1.35,0.008],3:[1.2,1.325,0.0075],5:[1.2,1.55,0.0005],6:[1.2,1.525,0.001],9:[1.2,1.325,0.01],23:[1.1,7,0.09],7:[1.2,1.325,0.008],4:[1.2,1.3,0.008],8:[1.2,1.35,0.006],10:[1.2,1.325,0.0055],11:[1.2,1.325,0.005],12:[1.2,1.4,0.004],13:[1.2,1.525,0.001],28:[1.1,7,0.0225],14:[1.2,1.4,0.005],15:[1.2,1.3,0.0075],16:[1.2,1.3,0.01],29:[1.1,7,0.045],18:[1.2,1.525,0.0015],19:[1.2,1.5,0.001],20:[1.2,1.55,0.0005],27:[1.1,7,0.0045],34:[1.1,7,0.0135],35:[1.1,7,0.0045]};
   // Card → stat category, and per-phase category importance. Weights are chosen automatically from
   // your detected phase (Home tab) so the Suggested order tunes to where you are in the game.
-  var CARD_CAT = { 17: "dmg", 3: "dmg", 9: "dmg", 5: "reinc", 6: "gear", 18: "pet", 19: "pet", 20: "pet", 1: "eco", 2: "eco", 7: "eco", 8: "eco", 13: "eco", 4: "prod", 10: "prod", 11: "prod", 12: "prod", 14: "prod", 15: "prod", 16: "prod", 23: "end", 27: "end", 28: "end", 29: "end", 34: "end", 35: "end" };
+  var CARD_CAT = { 17: "dmg", 3: "dmg", 9: "dmg", 5: "reinc", 6: "gear", 18: "pet", 19: "pet", 20: "pet", 1: "eco", 2: "eco", 7: "eco", 8: "eco", 13: "eco", 4: "prod", 10: "prod", 11: "prod", 12: "prod", 14: "prod", 15: "prod", 16: "prod", 23: "end", 27: "end", 28: "end", 29: "end", 34: "end", 35: "end", 38: "end", 39: "end", 40: "end", 41: "end" };
   var PHASE_WEIGHTS = {
     early:  { dmg: 1.0, eco: 0.7, gear: 0.6, reinc: 0.4, pet: 0.4, prod: 0.4, end: 0.2 },
     ascend: { dmg: 1.0, reinc: 0.95, gear: 0.9, pet: 0.75, eco: 0.65, end: 0.5, prod: 0.35 },
@@ -1835,7 +1845,7 @@
   // Per-card ascension weight = how much that card's stat feeds reincarnation-exp gain (decompiled
   // from ReincarnationMain): Reinc card is a direct multiplier; damage/Confection/Residue feed it
   // moderately (combat depth / gain formula / exp-cost reduction); pets & economy barely.
-  var ASCENSION_WEIGHT = { 5: 1.0, 13: 0.6, 4: 0.5, 17: 0.45, 3: 0.45, 6: 0.4, 9: 0.35, 23: 0.35, 2: 0.3, 1: 0.28, 8: 0.22, 7: 0.18, 10: 0.15, 11: 0.15, 12: 0.15, 14: 0.15, 15: 0.15, 16: 0.15, 18: 0.15, 19: 0.12, 20: 0.12, 27: 0.2, 28: 0.2, 29: 0.2, 34: 0.15, 35: 0.15 };
+  var ASCENSION_WEIGHT = { 5: 1.0, 13: 0.6, 4: 0.5, 17: 0.45, 3: 0.45, 6: 0.4, 9: 0.35, 23: 0.35, 2: 0.3, 1: 0.28, 8: 0.22, 7: 0.18, 10: 0.15, 11: 0.15, 12: 0.15, 14: 0.15, 15: 0.15, 16: 0.15, 18: 0.15, 19: 0.12, 20: 0.12, 27: 0.2, 28: 0.2, 29: 0.2, 34: 0.15, 35: 0.15, 38: 0.15, 39: 0.12, 40: 0.12, 41: 0.12 };
   function cardPhaseProfile() {
     var transc = toNum(deepFind(PARSED, "Transcendence")) || 0;
     var asc = toNum(deepFind(PARSED, "AscensionCount")) || 0;
@@ -1851,7 +1861,19 @@
   }
   function logAdd(a, b) { if (a === -Infinity) return b; if (b === -Infinity) return a; var m = Math.max(a, b); return m + Math.log10(1 + Math.pow(10, Math.min(a, b) - m)); }
   function bonusMinus1L10(f, powL10) { if (!f || powL10 === -Infinity) return -Infinity; var logB = powL10 * Math.LN10 / Math.log(f[1]); return logB * Math.log10(f[0]) + Math.log10(f[2]); }
+  // Newer cards 38-41 use an ADDITIVE-log formula (decompiled): bonus = base + log_logBase(Pow) × mult.
+  // [logBase, tempBase, tempMult, permaBase, permaMult]
+  var CARD_ADD = { 38: [10, 1.05, 0.0005, 1.0, 0.0004], 39: [10, 1.05, 0.0004, 1.0, 0.0003], 40: [15, 1.05, 0.00035, 1.0, 0.00035], 41: [40, 1.05, 0.0002, 1.0, 0.0002] };
+  function addMinus1L10(cfg, powL10, perma) {
+    if (!cfg || powL10 === -Infinity) return -Infinity;
+    var base = perma ? cfg[3] : cfg[1], mult = perma ? cfg[4] : cfg[2];
+    var v = (base - 1) + (powL10 / Math.log10(cfg[0])) * mult;
+    return v > 0 ? Math.log10(v) : -Infinity;
+  }
   function cardTransfer() {
+    // The game stores the final rates directly (BonusesFunction.ChargeTransfertPowerCalc) — read them when present.
+    var sp = deepFind(PARSED, "ChargeTransfertPowerPerma"), st = deepFind(PARSED, "ChargeTransfertPowerTemp");
+    if (sp != null && st != null) return { temp: Number(st), perma: Number(sp) };
     var lv = function (k) { return toNum(deepFind(PARSED, k)) || 0; };
     var base = 0.025 + lv("ExpeShopChargeTransfertPowerLevel") * 0.0025 + lv("CowShopChargeTransfertPower") * 0.0025 + lv("WAPChargeTransfertPower") * 0.0025;
     var fs = deepFind(PARSED, "FarmingShopUniqueMainGame") || [];
@@ -1876,19 +1898,25 @@
     var weights = PHASE_WEIGHTS[prof.key];
     var rows = coll.map(function (c) {
       var permaL10 = bdLog10(c.PowerPermaBD), tempL10 = bdLog10(c.PowerTempBD);
-      var tf = CARD_TEMP[c.ID], pf = CARD_PERMA[c.ID];
+      var tf = CARD_TEMP[c.ID], pf = CARD_PERMA[c.ID], ad = CARD_ADD[c.ID];
       var numv = (c.ID === 26 || c.ID === 27) ? 0.0025 : ((c.ID === 28 || c.ID === 29) ? 0.001 : 0.02);
-      var tL = bonusMinus1L10(tf, tempL10), pL = bonusMinus1L10(pf, permaL10);
-      var curL10 = (tL > -Infinity && pL > -Infinity) ? tL + pL + Math.log10(1 + (c.Level || 0) * numv) + 2 : -Infinity;
       var newPermaL10 = logAdd(permaL10, tempL10 + logTransferPerma);
-      var before = bonusMinus1L10(pf, permaL10), after = bonusMinus1L10(pf, newPermaL10);
+      var tL, pL, known, before, after;
+      if (ad) { // additive-log cards 38-41
+        tL = addMinus1L10(ad, tempL10, false); pL = addMinus1L10(ad, permaL10, true); known = true;
+        before = pL; after = addMinus1L10(ad, newPermaL10, true);
+      } else {
+        tL = bonusMinus1L10(tf, tempL10); pL = bonusMinus1L10(pf, permaL10); known = !!pf;
+        before = pL; after = bonusMinus1L10(pf, newPermaL10);
+      }
+      var curL10 = (tL > -Infinity && pL > -Infinity) ? tL + pL + Math.log10(1 + (c.Level || 0) * numv) + 2 : -Infinity;
       var gainL10 = (after > -Infinity && before > -Infinity) ? (after - before) : -Infinity; // log10 of perma-bonus ratio
       // Pushing ascension → weight by the card's real reinc-exp contribution; otherwise by phase category.
       var w = (prof.key === "ascend" && ASCENSION_WEIGHT[c.ID] != null) ? ASCENSION_WEIGHT[c.ID]
         : (weights[CARD_CAT[c.ID]] != null ? weights[CARD_CAT[c.ID]] : 0.4);
       // Suggested score: importance-led, tempered by catch-up size (log-compressed so huge gains don't drown out weight).
       var score = gainL10 > 1 ? w * Math.log10(gainL10) * 10 : 0;
-      return { c: c, id: c.ID, name: cardName(c.ID), level: c.Level || 0, known: !!pf, curL10: curL10, gainL10: gainL10, gainPctL10: gainL10 + 2, score: score };
+      return { c: c, id: c.ID, name: cardName(c.ID), level: c.Level || 0, known: known, curL10: curL10, gainL10: gainL10, gainPctL10: gainL10 + 2, score: score };
     });
     var known = rows.filter(function (r) { return r.known && r.gainL10 > -Infinity; });
     var bestPct = known.slice().sort(function (a, b) { return b.gainL10 - a.gainL10; });
