@@ -1702,7 +1702,9 @@
       ["Reinc-Exp perk", fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")))]
     ]);
     html += '<p class="sys-note">The Skull shop — permanent combat perks bought with Skulls (decompiled from BattleDeathUpgrade). <b>This is your core damage engine:</b> more Attack/HP → clear deeper → more Waves & Class levels → more reincarnation-exp → Ascend. Skulls are effectively unlimited vs cost, so use <b>One-Click Buy Max</b> — the question is priority.</p>';
-    html += '<div class="rec-box"><b>Priority:</b> keep <b>Reincarnation Exp</b> ⭐ (a direct ascension multiplier — it\'s in the reinc-exp formula), then max <b>Attack</b> &amp; <b>HP</b> for combat depth. Attack Speed / Crit / Evade cap out — level them to the cap, then leave them.</div>';
+    var pAsc = saNum("AscensionCount");
+    if (pAsc < 40) html += '<div class="rec-box"><b>Priority:</b> max <b>Reincarnation Exp</b> ⭐ (a direct ascension multiplier) <b>until Ascension 40</b> — then it becomes a flat ×1,000,000 and leveling it stops mattering. Also max <b>Attack</b> &amp; <b>HP</b> for combat depth. Attack Speed / Crit / Evade cap — level to the cap and leave them.</div>';
+    else html += '<div class="rec-box" style="border-color:var(--gold)"><b>Priority (Ascension 40+):</b> the <b>Reincarnation-Exp perk is now a flat ×1,000,000</b> regardless of level — <b>stop leveling it</b> (yours is Lv ' + fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")) || 0) + ', correctly). Pour skulls into <b>Attack</b> &amp; <b>HP</b> for combat depth instead; cap Attack Speed / Crit / Evade and leave them.</div>';
     html += '<div class="sys-h">Your perks</div><div class="rowlist">' + PERKS.map(function (p) {
       var lv = toNum(deepFind(PARSED, p.f));
       var flag = p.asc ? ' <span class="flag good">Ascension ⭐</span>' : (p.core ? ' <span class="flag tip">Core damage</span>' : "");
@@ -2093,8 +2095,15 @@
       var g = bonusMinus1L10(CARD_PERMA[5], npL) - bonusMinus1L10(CARD_PERMA[5], permaL);
       if (g > 0.02) out.push({ ic: "🃏", label: "Charge the Reincarnation card", detail: "directly multiplies reinc-exp by +" + pctFromL10(g + 2) + " per charge", pct: null, goto: "cards" });
     }
+    var ascN = saNum("AscensionCount");
+    // Reinc-Exp Skull perk scales ONLY below Ascension 40 — at 40+ it's a flat ×1,000,000 regardless of level (decompiled).
     var pkReinc = toNum(deepFind(PARSED, "PerkReincarnationExpLevel"));
-    if (pkReinc != null) out.push({ ic: "💀", label: "Level the Reincarnation-Exp Skull perk", detail: "Lv " + fmtNum(pkReinc) + " · directly multiplies reinc-exp (Buy Max with Skulls)", pct: null, goto: "perks" });
+    if (pkReinc != null && ascN < 40) out.push({ ic: "💀", label: "Buy Max the Reincarnation-Exp Skull perk", detail: "Lv " + fmtNum(pkReinc) + " · ×0.01/level reinc-exp (Buy Max with Skulls) — but it becomes a flat ×1M at Ascension 40, so only worth it until then", pct: null, goto: "perks" });
+    // Battle "Reincarnation Exp" combat upgrade also caps — scales only below Ascension 30 (flat ×1200 after).
+    var battleReinc = toNum(deepFind(PARSED, "BattleReincarnationExpBonusLevel"));
+    if (battleReinc != null && ascN < 30) out.push({ ic: "⚔️", label: "Level the Reincarnation-Exp combat upgrade", detail: "Lv " + fmtNum(battleReinc) + " · ×0.01/level reinc-exp — caps to a flat ×1200 at Ascension 30, so push it now", pct: null, goto: "perks" });
+    // Challenge 8 (Untalented) permanently DOUBLES the reinc-exp bonus — a one-time ×2.
+    if (saNum("Challenge8Done") === 0 && saNum("ChallengeUnlocked") > 0) out.push({ ic: "🏆", label: "Beat Challenge 8 (Untalented)", detail: "clearing it permanently DOUBLES your reincarnation-exp bonus (×2) — one of the biggest one-time levers", pct: 100, goto: "transcendence" });
     var asc10 = saNum("AscensionCount") >= 10, cowRLv = toNum(deepFind(PARSED, "CowShopReincarnationBonus")) || 0;
     out.push({ ic: "🥛", label: asc10 ? "Keep residue income high (cows auto-restore)" : "Buy cows & residue upgrades after Ascension", detail: "CowShop Reinc-Exp bonus ×1.01/level (now Lv " + fmtNum(cowRLv) + " = ×" + Math.pow(1.01, cowRLv).toPrecision(3) + ")" + (asc10 ? " · auto-restores free from Ascension 10, so just farm Residue on expeditions" : " · buy it manually each run until Ascension 10"), pct: 1, goto: "residue", auto: asc10 });
     out.push({ ic: "⚔️", label: "Grow total damage (Perks + Talents + classes)", detail: "deeper combat (CurrentLevel " + fmtNum(toNum(deepFind(PARSED, "CurrentLevel"))) + ") raises reinc-exp — logarithmically, so the multipliers above beat raw damage, but it's the base everything scales on", pct: null, goto: "perks" });
@@ -2265,7 +2274,8 @@
       item(!!sp.afford, "sweetpotato", "🍠", "Sweet Potato — " + sp.u.n, (sp.afford ? "Buy now" : "Save toward it") + " (Lv " + sp.lv + " · " + fmtNum(sp.cost) + " sweet potatoes)", sp.u.e + " — the sweet-potato upgrade that most speeds Ascension.");
     }
     var pkR = toNum(deepFind(PARSED, "PerkReincarnationExpLevel"));
-    if (pkR != null) item(false, "perks", "💀", "Combat perks (Skulls)", "Buy Max: Reincarnation-Exp ⭐, then Attack & HP", "Your core damage engine — deeper clears mean more reinc-exp, and the Reinc-Exp perk is a direct ascension multiplier.");
+    var brAsc = toNum(deepFind(PARSED, "AscensionCount")) || 0;
+    if (pkR != null) item(false, "perks", "💀", "Combat perks (Skulls)", brAsc < 40 ? "Buy Max: Reincarnation-Exp ⭐, then Attack & HP" : "Buy Max: Attack & HP (Reinc-Exp perk is capped)", brAsc < 40 ? "Your core damage engine — and the Reinc-Exp perk is a direct ascension multiplier until Ascension 40." : "Your core damage engine — deeper clears mean more reinc-exp. (At Ascension 40+ the Reinc-Exp perk is a flat ×1M, so don't bother leveling it.)");
     var gn = deepFind(PARSED, "GiantNode") || [], rgn = 0; REINC_GIANT_IDX.forEach(function (i) { rgn += Number(gn[i]) || 0; });
     if (rgn < 12) item(true, "talents", "🌿", "Talent tree — reincarnation nodes", "Grab the remaining " + (12 - rgn) + " reincarnation Giant Nodes", "Each is a direct ×1.25 to reinc-exp — a top ascension lever from the talent tree.");
     if (LAST.card) {
@@ -2350,7 +2360,7 @@
     if (rgn < 12) push(true, "talents", "🌿", "Talents", "Grab " + (12 - rgn) + " Reincarnation Giant Node" + (12 - rgn > 1 ? "s" : ""), "Each is a direct ×1.25 to reinc-exp — a top talent-tree ascension lever");
 
     // 7 — Skull perks.
-    push(false, "perks", "💀", "Skull perks", "Buy Max: Reincarnation-Exp, then Attack & HP", "Your damage + ascension engine — deeper clears mean more reinc-exp");
+    push(false, "perks", "💀", "Skull perks", saNum("AscensionCount") < 40 ? "Buy Max: Reincarnation-Exp, then Attack & HP" : "Buy Max: Attack & HP", "Your damage + ascension engine — deeper clears mean more reinc-exp" + (saNum("AscensionCount") >= 40 ? " (Reinc-Exp perk is flat-capped at Ascension 40, skip it)" : ""));
 
     // 8 — Expeditions: frontier zones, pet-damage coverage, shop buy.
     if (LAST.zoneFrontier && LAST.zoneFrontier.length) {
@@ -2527,7 +2537,7 @@
     H.push('<p class="sys-note"><b style="color:var(--leaf)">Reinc-exp you GAIN each tick</b> is a product — so anything that multiplies one factor speeds every ascension by that %:</p>');
     H.push('<div class="rowlist">' +
       rowItem(null, "Total class levels (CurrentLevel)", "The dominant base term, with built-in log & level bonuses. Level every class, always.", '<span class="flag good">biggest base</span>') +
-      rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, Reinc-Exp Skull perk, After Life Altar building, the 12 Talent Giant Nodes, cows, and the Reinc-Exp Assembly Lines.", '<span class="flag good">multiplier stack</span>') +
+      rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, the 12 Talent Giant Nodes (×1.25 each), After Life Altar, cows, Reinc-Exp Assembly Lines, and the Portal reinc upgrade. <b>Milestone spikes:</b> the Skull Reinc-Exp perk flat-caps to ×1,000,000 at Ascension 40 and the combat Reinc-Exp upgrade to ×1200 at Ascension 30 — level them hard before then, ignore after. <b>Beating Challenge 8 (Untalented) permanently doubles this whole stack.</b>", '<span class="flag good">multiplier stack</span>') +
       rowItem(null, "Time Bonus", "Your idle/offline multiplier — grows +25% per ascension. Idle time is free progress.", '<span class="flag tip">+25%/ascension</span>') +
       rowItem(null, "Confection level", "A log bonus that rises on autopilot (worm/confection auto-buyers).", '<span class="flag tip">auto</span>') +
       rowItem(null, "Best world progress", "+0.02% per area — a small nudge to keep pushing depth.", '<span class="flag tip">depth</span>') +
