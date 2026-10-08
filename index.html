@@ -2182,7 +2182,7 @@
       if (tb != null) html += '<div class="rec-box"><b>⏳ Time Bonus: ×' + (tb >= 10 ? Math.round(tb) : tb.toFixed(2)) + '</b> — a reinc-exp multiplier from <b>' + (rt ? fmtDur(rt) : "time") + ' in this reincarnation</b>. It\'s <b>0 below 15 min</b> and climbs the longer you stay (×1 at 2h, ×2 at 6h, ×3 at 18h, all ×1.5×(1+Ascension×0.25)). <b>Reincarnating resets it to 0</b> — only do it when a fresh run\'s depth will out-earn the lost multiplier; at high ascension, long single runs often win.</div>';
       // Reinc-exp is banked in a LUMP on reincarnation — if the pending lump crosses the ascension requirement, reincarnate then ascend.
       var wa = reincWallAnalysis();
-      if (wa && wa.canAscend) html += '<div class="rec-box" style="border-color:var(--gold)"><b>🔄 Reincarnate now, then Ascend.</b> Reinc-exp is <b>banked in a lump when you reincarnate</b> (not per-second). Your pending lump — driven by that ×' + Math.round(wa.tb) + ' Time Bonus — would push your Reincarnation level to ~<b>' + wa.wall.toLocaleString() + '</b>, <b>past your ascension requirement of ' + wa.reincReq.toLocaleString() + '</b>. So <b>reincarnate to bank it, then Ascend.</b> (You\'re at ' + wa.reincLvl.toLocaleString() + ' now — the bar fills in one reincarnation.)</div>';
+      if (wa && wa.canAscend) html += '<div class="rec-box" style="border-color:var(--gold)"><b>🔄 Reincarnate now, then Ascend.</b> Reinc-exp is <b>banked in a lump when you reincarnate</b> (not per-second). Your pending lump — driven by that ×' + Math.round(wa.tb) + ' Time Bonus — would push your Reincarnation level to ~<b>' + wa.wall.toLocaleString() + '</b>, <b>past your ascension requirement of ' + wa.reincReq.toLocaleString() + '</b>. So <b>reincarnate to bank it, then Ascend.</b> (You\'re at ' + wa.reincLvl.toLocaleString() + ' now — the bar fills in one reincarnation.) <b>Note:</b> you can\'t Ascend while any Expedition is running — let your 8 teams finish first.</div>';
       else if (wa) html += '<p class="sys-note">Reinc-exp is banked in a <b>lump when you reincarnate</b> (decompiled — not per-second), sized by your Time Bonus × the multiplier stack. Your pending lump reaches reinc level ~<b>' + wa.wall.toLocaleString() + '</b> vs the <b>' + wa.reincReq.toLocaleString() + '</b> ascension requirement — keep building the levers below until a lump crosses it.</p>';
       html += '<div class="rowlist">' + ascensionLevers().map(function (L, i) {
         var flag = L.auto ? '<span class="flag tip">auto</span>' : (L.pct != null ? ('<span class="flag good">+' + Math.round(L.pct) + '%/step</span>') : '<span class="flag tip">multiplier</span>');
@@ -2644,20 +2644,25 @@
        "<b>Ascension 20 → Portal:</b> keep the auto-floor climbing and buy portal-shop levels; from here Portal beats world farming.",
        "<b>Buy cows after every ascension</b> — residue/milk both multiplies and discounts the requirement."]));
     H.push(phase("Phase 5 — Late Ascension", "Ascension 30–59",
-      "Smooth, fast ascensions on a fully-built multiplier stack. Push toward Transcendence.",
-      ["Keep every reinc-exp lever maxed: Reinc-Exp perk (Buy Max), After Life Altar, Reinc card, the 12 Giant Nodes, Assembly #20, cows.",
+      "Two big economy evolutions hit here, and your reinc levers shift. Push toward Transcendence.",
+      ["<b>Ascension 30 → Potatoes evolve into Sweet Potatoes</b>; <b>Ascension 40 → Skulls evolve into Skull Powder</b> — the old currencies/upgrades are replaced (which is why the Reinc-Exp Skull perk and combat reinc upgrade <b>flat-cap</b> at A40/A30: stop leveling them).",
+       "Keep the reinc levers that still scale: After Life Altar, Reinc card, the 12 Giant Nodes, the <b>Reinc-Exp Assembly Lines</b>, cows (auto from A10).",
        "Sweet-Potato <b>ascension-gated tiers unlock every 2 ascensions</b> (32 → 44); buy each the moment it opens.",
-       "<b>Ascension 50 → Subclass Talents</b> open up — a deeper talent layer.",
-       "Clear <b>Challenges</b> when you can — each keeps a permanent reward and adds flat Reinc Points."]));
+       "<b>Ascension 50 → Subclass Talents</b> (subclass level 750, points every 15 levels).",
+       "Clear <b>Challenges</b> when you can — each keeps a permanent reward + flat Reinc Points, and <b>Challenge 8 permanently doubles your reinc-exp bonus</b>."]));
     H.push(phase("Phase 6 — Transcendence (T3)", "Ascension 60+ · the endgame",
       "At Ascension 60 you can Transcend — a T3 prestige that opens the Soul economy, Artifacts, and the Seed Shop.",
-      ["<b>Transcending keeps</b> Achievements, Whack shop, Cow Factory Page 1, pets (& later Rank), Souls, and some QoL — but resets the rest, far harder than an ascension.",
+      ["<b>Transcending keeps</b> pets/promotions, the Soul Shop, and some QoL — but resets almost everything else, far harder than an ascension.",
        "Spend <b>Souls</b> in the Soul Shop (Auto-Quest Completer and QoL first), and lock in <b>Seed Shop</b>: Auto-seed → Item Rarity → Portal HP/ATK reduction.",
-       "From here it's the A60→A71+ endgame band: the same gain ÷ need loop, now with Soul and Artifact multipliers layered on top."]));
+       "<b>The Generator</b> grows stronger with time and each ascension (full potential after several weeks) — keep ascending to ramp it.",
+       "<b>Jewel &amp; Gems:</b> upgrade the Jewel for sockets + gem power; gems drop in Eternal-difficulty zones, Portals, Expeditions, and farming — build loadouts and swap freely.",
+       "From here it's the A60→A71+ endgame band: the same gain ÷ need loop, now with Soul, Generator, Jewel and Artifact multipliers layered on top."]));
 
     // AUTOMATION
     H.push('<div class="sys-h">Leave these alone — they run themselves</div>');
     H.push('<p class="sys-note"><b>Worm Breeding, Confection, the Cow Factory, Farming, and Contagion</b> all run on auto-buyers once unlocked. They feed your economy in the background — don\'t spend attention micromanaging them. Your hands belong on the levers above.</p>');
+    H.push('<div class="sys-h">Passive bonuses worth knowing (from the in-game guide)</div>');
+    H.push('<p class="sys-note"><b>Achievements</b> grant <b>+0.5% Attack, HP &amp; HP-Regen per Achievement Point</b> — so clearing them is free permanent combat power. <b>Pets</b> grant <b>+1% Attack &amp; HP per ascension for each Pet Captured</b>, so capturing pets compounds. Both are automatic once earned — no upkeep.</p>');
 
     // CHALLENGES
     H.push('<div class="sys-h">Challenges <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(each keeps a permanent reward + flat Reinc Points)</span></div>');
