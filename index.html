@@ -1399,10 +1399,25 @@
 
   // ---- System-tab renderers (all read the game's own stored values) ----
   // Expedition reward bonuses a pet can provide (resource IDs), + pet damage (decompiled from PetData)
-  var EXP_BONUS = { 1013: "Damage", 1016: "Token", 1011: "Reward", 1015: "Reinc Pts", 1010: "Card Power", 1014: "Card Exp", 1012: "Time", 1009: "Residue" };
-  var EXP_BONUS_ORDER = [1013, 1016, 1011, 1015, 1010, 1014, 1012, 1009];
+  // Full PetExpBonis map (decompiled). 1011/1012 boost EVERY reward; 1013 is pet damage; the rest are per-resource.
+  var EXP_BONUS = { 1001: "Potato", 1002: "Class Exp", 1003: "Skull", 1004: "Worm Qty", 1005: "Poop", 1006: "Larva Qty", 1007: "Whack", 1008: "Milk", 1009: "Residue", 1010: "Card Power", 1011: "Efficiency (all rewards)", 1012: "Time (all rewards)", 1013: "Pet Damage", 1014: "Card Exp", 1015: "Reinc Pts", 1016: "Exp. Token" };
+  var EXP_BONUS_ORDER = [1011, 1012, 1015, 1009, 1013, 1016, 1010, 1014, 1004, 1008, 1002, 1003, 1007, 1001, 1005, 1006];
   function petDamage(p) { return (p.BaseDungeonDamage || 0) * 5 * (1 + (p.Rank || 0) * 0.05); } // PetData.TotalDungeonDamage()
   function petExpBonuses(p) { var out = []; (p.BonusList || []).forEach(function (b) { if (EXP_BONUS[b.ID]) out.push(b.ID); }); return out; }
+  // Decompiled expedition stats: efficiency(1011)+time(1012) boost all rewards; damage(1013) deepens the run; gains(1001-1016) boost specific resources.
+  function petExpStats(p) {
+    var eff = 0, time = 0, dmgB = 0, gains = {};
+    (p.BonusList || []).forEach(function (b) {
+      if (!b || !(b.ID > 1000 && b.ID <= 1016)) return;
+      var pow = b.Power || 0;
+      if (b.ID === 1011) eff += pow; else if (b.ID === 1012) time += pow; else if (b.ID === 1013) dmgB += pow;
+      else gains[b.ID] = (gains[b.ID] || 0) + pow;
+    });
+    return { eff: eff, time: time, dmgB: dmgB, gains: gains };
+  }
+  // Reward-aware pet value for team-building: raw damage lifted by the always-helpful expedition bonuses
+  // (efficiency + time + damage) — reward ≈ depth(damage) × (1+time) × (1+eff) × (1+gain) × synergy.
+  function petExpPower(p) { var s = petExpStats(p); return petDamage(p) * (1 + s.eff + s.time + s.dmgB); }
   function ptypeTag(p) { return p.Type === 1 ? '<span class="ptype g">GND</span>' : (p.Type === 2 ? '<span class="ptype a">AIR</span>' : ""); }
   function teamSynergy(team) { // GetSynergyBonus: 0.25/pet + 0.25 both types + 0.25 if 2+ each
     var g = 0, a = 0;
@@ -1411,9 +1426,11 @@
     if (g > 0 && a > 0) { s += 0.25; if (g > 1 && a > 1) s += 0.25; }
     return s;
   }
+  // Decompiled team damage: Σpetdamage × synergy × (1 + Σ dmg-bonus 1013) × (1 + Σ time-bonus 1012) × global.
   function teamDamageL10(team, globalL10) {
-    var base = 0; team.forEach(function (p) { base += petDamage(p); });
-    return base > 0 ? Math.log10(base) + globalL10 + Math.log10(teamSynergy(team)) : -Infinity;
+    var base = 0, dmgB = 0, time = 0;
+    team.forEach(function (p) { base += petDamage(p); var s = petExpStats(p); dmgB += s.dmgB; time += s.time; });
+    return base > 0 ? Math.log10(base) + Math.log10(teamSynergy(team)) + Math.log10(1 + dmgB) + Math.log10(1 + time) + globalL10 : -Infinity;
   }
   // How many Ground / Air slots per expedition team (read from your actual teams; default 2+2).
   function expeditionSlots() {
@@ -1456,7 +1473,8 @@
     var el = document.getElementById("petsBody"); if (!el) return;
     if (!PARSED) { el.innerHTML = emptyState(); return; }
     var coll = (deepFind(PARSED, "PetsCollection") || []).filter(function (p) { return p && (p.BaseDungeonDamage > 0 || p.Level > 0 || p.Rank > 0); });
-    coll.sort(function (a, b) { return petDamage(b) - petDamage(a); });
+    // Rank by reward-aware EXPEDITION POWER (damage lifted by efficiency/time/damage bonuses), not raw damage alone.
+    coll.sort(function (a, b) { return petExpPower(b) - petExpPower(a); });
     var ground = coll.filter(function (p) { return p.Type === 1; });
     var air = coll.filter(function (p) { return p.Type === 2; });
     var tokens = toNum(deepFind(PARSED, "PetTokenCurrent")) || 0;
@@ -1467,7 +1485,7 @@
       ["Pet tokens", tokens],
       ["Total rank", fmtNum(toNum(deepFind(PARSED, "HighestTotalPetRank")))]
     ]);
-    html += '<p class="sys-note">Expedition damage = <b>BaseDamage × 5 × (1 + Rank × 0.05)</b> (decompiled from the game). Teams take Ground + Air pets, so fill each slot with your strongest of that type. Each pet also grants specific expedition reward bonuses — build a team around the reward you want (see the Bonus Finder below).</p>';
+    html += '<p class="sys-note">Decompiled reward math: an expedition\'s yield for a resource = <b>zone rate × (1 + Time) × (1 + Efficiency) × (1 + that-resource Gain) × Synergy</b>, and zone rate rises with team <b>damage</b> (= BaseDamage × 5 × (1 + Rank × 0.05)). So the best expedition pets aren\'t just the highest damage — they also carry <b>Efficiency, Time</b> and the <b>reward-gain</b> bonuses. Teams below are ranked by that full <b>Expedition Power</b>, and the Bonus Finder shows which pets carry each reward.</p>';
     if (tokens > 0) html += '<div class="rec-box"><b>' + tokens + " pet token" + (tokens > 1 ? "s" : "") + " available</b> — spend on promoting a maxed high-rank pet for more damage.</div>";
 
     // ---- Best Teams (auto-built + assigned to top expeditions) ----
@@ -1486,20 +1504,29 @@
       var names = t.map(function (p) { return '<span class="pn"><span class="ptype ' + (p.Type === 1 ? "g" : "a") + '">' + (p.Type === 1 ? "G" : "A") + '</span>' + esc(petName(p.ID)) + '</span>'; }).join("");
       var e = expList[i];
       var expLine = e ? '<div class="texp">→ ' + esc(expName(e.id)) + ' · rewards ' + e.cards.map(cardName).join(", ") + '</div>' : '';
-      return '<div class="team-row"><span class="rnum">' + (i + 1) + '</span><div class="tinfo"><div class="tnames">' + names + '</div>' + expLine + '</div><span class="rval">e' + (teamDmgs[i] === -Infinity ? "0" : teamDmgs[i].toFixed(0)) + '</span></div>';
+      // team-level reward strengths (summed from the decompiled bonuses)
+      var teff = 0, ttime = 0, tg = {};
+      t.forEach(function (p) { var s = petExpStats(p); teff += s.eff; ttime += s.time; for (var k in s.gains) tg[k] = (tg[k] || 0) + s.gains[k]; });
+      var tags = [];
+      if (teff > 0) tags.push('+' + Math.round(teff * 100) + '% all');
+      if (ttime > 0) tags.push('+' + Math.round(ttime * 100) + '% time');
+      Object.keys(tg).sort(function (a, b) { return tg[b] - tg[a]; }).slice(0, 2).forEach(function (k) { tags.push(EXP_BONUS[k] + ' +' + Math.round(tg[k] * 100) + '%'); });
+      var tagLine = tags.length ? '<div class="texp" style="color:var(--leaf)">' + tags.join(" · ") + '</div>' : '';
+      return '<div class="team-row"><span class="rnum">' + (i + 1) + '</span><div class="tinfo"><div class="tnames">' + names + '</div>' + expLine + tagLine + '</div><span class="rval">e' + (teamDmgs[i] === -Infinity ? "0" : teamDmgs[i].toFixed(0)) + '</span></div>';
     }).join("");
 
     html += petBlock("Best Ground pets", ground.slice(0, 8));
     html += petBlock("Best Air pets", air.slice(0, 8));
 
-    html += '<div class="sys-h">Pet Bonus Finder</div><p class="sys-note">For each expedition reward type, your pets that provide it — ranked by damage. Run these on expeditions that give that reward.</p>';
+    html += '<div class="sys-h">Pet Bonus Finder</div><p class="sys-note">For each expedition reward, the pets that boost it — the <b>%</b> is that pet\'s bonus power, ranked by it. <b>Efficiency</b> and <b>Time</b> lift <i>every</i> reward, so those pets belong on any team. Put the rest on zones that drop their resource.</p>';
     html += '<div class="bonus-grid">';
     EXP_BONUS_ORDER.forEach(function (bid) {
-      var list = coll.filter(function (p) { return petExpBonuses(p).indexOf(bid) >= 0; }).sort(function (a, b) { return petDamage(b) - petDamage(a); });
+      var list = coll.map(function (p) { var pw = 0; (p.BonusList || []).forEach(function (b) { if (b.ID === bid) pw += b.Power || 0; }); return { p: p, pw: pw }; })
+        .filter(function (x) { return x.pw > 0; }).sort(function (a, b) { return b.pw - a.pw; });
       if (!list.length) return;
-      html += '<div class="bonus-find"><div class="bf-head">' + EXP_BONUS[bid] + ' Gain <span>' + list.length + ' pets</span></div>' +
-        list.slice(0, 6).map(function (p, i) {
-          return '<div class="rank-row"><span class="rnum">' + (i + 1) + '</span><span class="rname">' + ptypeTag(p) + esc(petName(p.ID)) + '</span><span class="rval">' + fmtNum(petDamage(p)) + '</span></div>';
+      html += '<div class="bonus-find"><div class="bf-head">' + EXP_BONUS[bid] + ' <span>' + list.length + ' pets</span></div>' +
+        list.slice(0, 6).map(function (x, i) {
+          return '<div class="rank-row"><span class="rnum">' + (i + 1) + '</span><span class="rname">' + ptypeTag(x.p) + esc(petName(x.p.ID)) + '</span><span class="rval">+' + Math.round(x.pw * 100) + '%</span></div>';
         }).join("") + '</div>';
     });
     html += '</div>';
