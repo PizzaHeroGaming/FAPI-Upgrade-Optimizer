@@ -2019,14 +2019,15 @@
       ["Best item rating", bdStr(deepFind(PARSED, "BestItemRating"))]
     ]);
     html += '<p class="sys-note">Each equipped item carries affixes (stat bonuses — decompiled). <b>Refining</b> it (materials of its own rarity tier) multiplies <b>all</b> its affixes by <b>(1 + refine level × ' + Math.round(ep * 100) + '%)</b>: so refine Lv 20 = <b>×2</b>, Lv 100 = <b>×' + (1 + 100 * ep).toFixed(0) + '</b>. Cost doubles every 10 levels but starts tiny.</p>';
-    if (lowRefine.length) html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚡ Refine your gear — a near-free boost you\'re missing.</b> ' + lowRefine.length + ' equipped item' + (lowRefine.length > 1 ? 's are' : ' is') + ' barely refined (Lv &lt;50) while you have materials to spare at that rarity. Refining multiplies every affix — <b>including Reinc-Exp on ' + reincGear.length + ' of your items</b>. In-game: drag each equipped item into the Enhance slot and pump refine levels.</div>';
+    if (lowRefine.length) html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚡ Refine your gear — a near-free boost you\'re missing.</b> ' + lowRefine.length + ' equipped item' + (lowRefine.length > 1 ? 's have' : ' has') + ' almost no <b>paid</b> refine levels (Lv &lt;50) while you have materials to spare at that rarity — each paid level adds +' + Math.round(ep * 100) + '% to <i>every</i> affix on top of the free ones. Refining multiplies all of them, <b>including Reinc-Exp on ' + reincGear.length + ' of your items</b>. In-game: drag each equipped item into the Enhance slot and pump refine levels.</div>';
     if (upCount) html += '<div class="rec-box"><b>Equip upgrades found:</b> ' + upCount + " slot" + (upCount > 1 ? "s" : "") + " have a higher-rated item sitting in your inventory — swap them in.</div>";
     else if (!lowRefine.length) html += '<div class="rec-box"><b>Gear looks optimal</b> — nothing outrates your equipped items, and your gear is well-refined.</div>';
     html += '<div class="sys-h">Equipped gear <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(refine multiplier · key affixes)</span></div><div class="rowlist">' + equipped.map(function (eq) {
       var r = eq.TotalItemRating != null ? eq.TotalItemRating : eq.BaseItemRating;
       var key = (eq.BonusList || []).filter(function (b) { return EQ_KEY_AFFIX[b.BonusID]; }).map(function (b) { return EQ_AFFIX[b.BonusID]; });
       var reinc = (eq.BonusList || []).some(function (b) { return b.BonusID === 12; });
-      var meta = "T" + eq.ItemRarity + " · refine Lv " + (eq.RefineLevel || 0) + " (×" + affixMult(eq).toFixed(2) + " affixes) · " + (eq.BonusList || []).length + " affixes" + (key.length ? " · key: " + key.join(", ") : "");
+      var fr = eq.FreeRefineLevel || 0;
+      var meta = "T" + eq.ItemRarity + " · refine Lv " + (eq.RefineLevel || 0) + (fr ? " (+" + fr + " free)" : "") + " = ×" + affixMult(eq).toFixed(2) + " affixes · " + (eq.BonusList || []).length + " affixes" + (key.length ? " · key: " + key.join(", ") : "");
       var flag = (reinc ? '<span class="flag good">Reinc-Exp</span> ' : '') + (upgradeFor[eq.ItemType] ? '<span class="flag tip">swap avail</span>' : '');
       return rowItem(null, "Slot " + eq.ItemType, meta, flag || ("Rating " + bdStr(r)));
     }).join("") + "</div>";
