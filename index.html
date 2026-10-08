@@ -2142,6 +2142,8 @@
       var apct = Math.min(100, arl / areq * 100);
       html += '<div class="sys-h">Ascension simulator <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(from the reinc-exp formula)</span></div>';
       html += '<p class="sys-note">You ascend when your Reincarnation level reaches the requirement — currently <b>' + fmtNum(arl) + ' / ' + fmtNum(areq) + ' (' + apct.toFixed(1) + '%)</b>. Decompiled from the game, reincarnation-exp gain is a <b>product</b> of these multipliers, so anything that multiplies one speeds your ascension by that %. Ranked by marginal impact:</p>';
+      var tb = toNum(deepFind(PARSED, "TimerReincBonuses")), rt = toNum(deepFind(PARSED, "CurrentReincarnationTimer"));
+      if (tb != null) html += '<div class="rec-box"><b>⏳ Time Bonus: ×' + (tb >= 10 ? Math.round(tb) : tb.toFixed(2)) + '</b> — a reinc-exp multiplier from <b>' + (rt ? fmtDur(rt) : "time") + ' in this reincarnation</b>. It\'s <b>0 below 15 min</b> and climbs the longer you stay (×1 at 2h, ×2 at 6h, ×3 at 18h, all ×1.5×(1+Ascension×0.25)). <b>Reincarnating resets it to 0</b> — only do it when a fresh run\'s depth will out-earn the lost multiplier; at high ascension, long single runs often win.</div>';
       html += '<div class="rowlist">' + ascensionLevers().map(function (L, i) {
         var flag = L.auto ? '<span class="flag tip">auto</span>' : (L.pct != null ? ('<span class="flag good">+' + Math.round(L.pct) + '%/step</span>') : '<span class="flag tip">multiplier</span>');
         return rowItem(i + 1, L.label, L.detail, flag);
@@ -2538,7 +2540,7 @@
     H.push('<div class="rowlist">' +
       rowItem(null, "Total class levels (CurrentLevel)", "The dominant base term, with built-in log & level bonuses. Level every class, always.", '<span class="flag good">biggest base</span>') +
       rowItem(null, "Reincarnation Bonuses", "The stacked ×reinc-exp multipliers: Reinc card, the 12 Talent Giant Nodes (×1.25 each), After Life Altar, cows, Reinc-Exp Assembly Lines, and the Portal reinc upgrade. <b>Milestone spikes:</b> the Skull Reinc-Exp perk flat-caps to ×1,000,000 at Ascension 40 and the combat Reinc-Exp upgrade to ×1200 at Ascension 30 — level them hard before then, ignore after. <b>Beating Challenge 8 (Untalented) permanently doubles this whole stack.</b>", '<span class="flag good">multiplier stack</span>') +
-      rowItem(null, "Time Bonus", "Your idle/offline multiplier — grows +25% per ascension. Idle time is free progress.", '<span class="flag tip">+25%/ascension</span>') +
+      rowItem(null, "Time Bonus (reincarnation timing)", "A big reinc-exp multiplier from <b>time spent in the current reincarnation</b> (decompiled): <b>0 if you reincarnate before 15 min</b>, then ramps to ×1 at 2h, ×2 at 6h, ×3 at 18h — all ×1.5 × (1 + Ascension×0.25). So <b>never reincarnate early</b>, and longer runs pay off hugely.", '<span class="flag good">don\'t reinc early</span>') +
       rowItem(null, "Confection level", "A log bonus that rises on autopilot (worm/confection auto-buyers).", '<span class="flag tip">auto</span>') +
       rowItem(null, "Best world progress", "+0.02% per area — a small nudge to keep pushing depth.", '<span class="flag tip">depth</span>') +
       '</div>');
