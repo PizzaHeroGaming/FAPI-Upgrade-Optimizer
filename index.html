@@ -2093,6 +2093,23 @@
 
   // Ascension simulator: reinc-exp gain is a PRODUCT of these multipliers (decompiled from ReincarnationMain),
   // so any action that multiplies one of them speeds your ascension by that %. Ranked by marginal impact.
+  // Reinc-exp is banked in a LUMP when you reincarnate (decompiled: += ReincarnationExpGained() on reinc/ascend, NOT per-tick).
+  // This computes your pending lump and the "wall" level it reaches — and whether reincarnating now crosses your ascension requirement.
+  function reincWallAnalysis() {
+    var CL = toNum(deepFind(PARSED, "CurrentLevel")), bp = toNum(deepFind(PARSED, "BestProgress")) || 0, conf = toNum(deepFind(PARSED, "ConfectionTotalLevel")) || 0;
+    var tb = toNum(deepFind(PARSED, "TimerReincBonuses")) || 0, rbL10 = bdLog10(deepFind(PARSED, "ReincarnationBonusesBD"));
+    var reincLvl = toNum(deepFind(PARSED, "ReincarnationLevel")), reincReq = toNum(deepFind(PARSED, "AscensionReincLevelRequired"));
+    if (CL == null || !reincReq || rbL10 === -Infinity || tb <= 0) return null;
+    var g = Math.log10(CL) + Math.min(1000, CL) * Math.log10(1.001) + Math.log10(Math.max(1, Math.log(CL) / Math.log(5) - 2)) + Math.log10(Math.max(1, 1 + (CL / 2000 - 0.5))) + Math.log10(1 + bp / 5000);
+    var confR = conf / 5e6; g += Math.log10(1 + Math.max(0, Math.min(confR, Math.log2(Math.max(2, confR)) / 2 + 1)));
+    g += Math.log10(tb) + rbL10;
+    function req(level) { var L = Math.log10(5 + level * 5); L += Math.min(level, 3000) * Math.log10(Math.min(1.0025, 1.00005 + Math.max(0, level / 500000))); L += Math.max(level - 3000, 0) * Math.log10(1.001); L += Math.log10(1 + Math.max(0, Math.min(1, (level - 1500) / 1000))); return L; }
+    var lo = reincLvl, hi = reincLvl * 3 + 10000;
+    for (var i = 0; i < 70; i++) { var mid = (lo + hi) / 2; if (req(mid) < g) lo = mid; else hi = mid; }
+    var wall = Math.round(lo);
+    return { lumpL10: g, wall: wall, reincLvl: reincLvl, reincReq: reincReq, tb: tb, canAscend: wall >= reincReq && reincLvl < reincReq };
+  }
+
   function ascensionLevers() {
     var out = [];
     var town = deepFind(PARSED, "TownCollection") || [];
@@ -2163,6 +2180,10 @@
       html += '<p class="sys-note">You ascend when your Reincarnation level reaches the requirement — currently <b>' + fmtNum(arl) + ' / ' + fmtNum(areq) + ' (' + apct.toFixed(1) + '%)</b>. Decompiled from the game, reincarnation-exp gain is a <b>product</b> of these multipliers, so anything that multiplies one speeds your ascension by that %. Ranked by marginal impact:</p>';
       var tb = toNum(deepFind(PARSED, "TimerReincBonuses")), rt = toNum(deepFind(PARSED, "CurrentReincarnationTimer"));
       if (tb != null) html += '<div class="rec-box"><b>⏳ Time Bonus: ×' + (tb >= 10 ? Math.round(tb) : tb.toFixed(2)) + '</b> — a reinc-exp multiplier from <b>' + (rt ? fmtDur(rt) : "time") + ' in this reincarnation</b>. It\'s <b>0 below 15 min</b> and climbs the longer you stay (×1 at 2h, ×2 at 6h, ×3 at 18h, all ×1.5×(1+Ascension×0.25)). <b>Reincarnating resets it to 0</b> — only do it when a fresh run\'s depth will out-earn the lost multiplier; at high ascension, long single runs often win.</div>';
+      // Reinc-exp is banked in a LUMP on reincarnation — if the pending lump crosses the ascension requirement, reincarnate then ascend.
+      var wa = reincWallAnalysis();
+      if (wa && wa.canAscend) html += '<div class="rec-box" style="border-color:var(--gold)"><b>🔄 Reincarnate now, then Ascend.</b> Reinc-exp is <b>banked in a lump when you reincarnate</b> (not per-second). Your pending lump — driven by that ×' + Math.round(wa.tb) + ' Time Bonus — would push your Reincarnation level to ~<b>' + wa.wall.toLocaleString() + '</b>, <b>past your ascension requirement of ' + wa.reincReq.toLocaleString() + '</b>. So <b>reincarnate to bank it, then Ascend.</b> (You\'re at ' + wa.reincLvl.toLocaleString() + ' now — the bar fills in one reincarnation.)</div>';
+      else if (wa) html += '<p class="sys-note">Reinc-exp is banked in a <b>lump when you reincarnate</b> (decompiled — not per-second), sized by your Time Bonus × the multiplier stack. Your pending lump reaches reinc level ~<b>' + wa.wall.toLocaleString() + '</b> vs the <b>' + wa.reincReq.toLocaleString() + '</b> ascension requirement — keep building the levers below until a lump crosses it.</p>';
       html += '<div class="rowlist">' + ascensionLevers().map(function (L, i) {
         var flag = L.auto ? '<span class="flag tip">auto</span>' : (L.pct != null ? ('<span class="flag good">+' + Math.round(L.pct) + '%/step</span>') : '<span class="flag tip">multiplier</span>');
         return rowItem(i + 1, L.label, L.detail, flag);
