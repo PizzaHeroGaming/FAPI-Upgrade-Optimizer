@@ -1985,11 +1985,17 @@
     el.innerHTML = html;
   }
 
+  // EquipmentBonus enum (decompiled) — item affix types. 12 = REINCARNATION_EXP.
+  var EQ_AFFIX = { 1: "STR", 2: "CON", 3: "DEX", 4: "AGI", 5: "LCK", 6: "STR+", 7: "CON+", 8: "Potato", 9: "Class Exp", 10: "Death Perk", 11: "Confection Exp", 12: "Reinc-Exp", 13: "Poop", 14: "Milk", 15: "Whack", 16: "Brewing Exp", 17: "Calcium", 18: "Worm Drop", 19: "Fermenting", 20: "Larva Eff", 21: "Residue", 22: "Larva Qty", 23: "Pet Lvl Exp", 24: "Pet Dmg", 25: "Pet Rank Exp", 26: "Card Power", 27: "Card Exp", 28: "Protein", 29: "Mining Power", 30: "Mining Exp", 31: "Outpost Mineral", 32: "Renown", 33: "Sweet Potato", 34: "Skull Powder", 35: "Subclass Exp" };
+  var EQ_KEY_AFFIX = { 12: 1, 24: 1, 26: 1, 21: 1, 23: 1 }; // reinc-exp, pet-dmg, card power, residue, pet-lvl-exp
   function renderEquipment() {
     var el = document.getElementById("eqBody"); if (!el) return;
     if (!PARSED) { el.innerHTML = emptyState(); return; }
     var equipped = (deepFind(PARSED, "EquippedItems") || []).filter(Boolean);
     var inv = (deepFind(PARSED, "InventoryItems") || []).filter(function (it) { return it && it.ItemType != null; });
+    var ep = toNum(deepFind(PARSED, "EnhancingPower")) || 0.05;
+    var mats = deepFind(PARSED, "RefineMaterials") || [];
+    function affixMult(it) { return 1 + ((it.RefineLevel || 0) + (it.FreeRefineLevel || 0)) * ep; }
     var upgradeFor = {};
     equipped.forEach(function (eq) {
       var eqR = eq.TotalItemRating != null ? eq.TotalItemRating : eq.BaseItemRating;
@@ -2002,19 +2008,27 @@
       if (best && bdCmp(best.r, eqR) > 0) upgradeFor[eq.ItemType] = best;
     });
     var upCount = Object.keys(upgradeFor).length;
+    // Under-refined items you can afford to refine (materials at that rarity available).
+    var lowRefine = equipped.filter(function (eq) { return (eq.RefineLevel || 0) < 50 && (Number(mats[eq.ItemRarity]) || 0) > 100; });
+    var reincGear = equipped.filter(function (eq) { return (eq.BonusList || []).some(function (b) { return b.BonusID === 12; }); });
+    LAST.eqRefine = lowRefine.length; LAST.eqReincGear = reincGear.length;
     var html = sysStats([
       ["Equipped slots", equipped.length],
-      ["Inventory items", inv.length],
+      ["Enhancing power", "+" + Math.round(ep * 100) + "%/refine lvl"],
+      ["Reinc-Exp gear", reincGear.length + "/" + equipped.length],
       ["Best item rating", bdStr(deepFind(PARSED, "BestItemRating"))]
     ]);
-    html += '<p class="sys-note">Item ratings are your save\'s own values. If an unequipped inventory item outrates what\'s in that slot, it\'s flagged — a real, safe swap.</p>';
-    if (upCount) html += '<div class="rec-box"><b>Equip upgrades found:</b> ' + upCount + " slot" + (upCount > 1 ? "s" : "") + " have a higher-rated item sitting in your inventory.</div>";
-    else html += '<div class="rec-box"><b>Gear looks optimal</b> — nothing in your inventory outrates your equipped items.</div>';
-    html += '<div class="sys-h">Equipped</div><div class="rowlist">' + equipped.map(function (eq) {
+    html += '<p class="sys-note">Each equipped item carries affixes (stat bonuses — decompiled). <b>Refining</b> it (materials of its own rarity tier) multiplies <b>all</b> its affixes by <b>(1 + refine level × ' + Math.round(ep * 100) + '%)</b>: so refine Lv 20 = <b>×2</b>, Lv 100 = <b>×' + (1 + 100 * ep).toFixed(0) + '</b>. Cost doubles every 10 levels but starts tiny.</p>';
+    if (lowRefine.length) html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚡ Refine your gear — a near-free boost you\'re missing.</b> ' + lowRefine.length + ' equipped item' + (lowRefine.length > 1 ? 's are' : ' is') + ' barely refined (Lv &lt;50) while you have materials to spare at that rarity. Refining multiplies every affix — <b>including Reinc-Exp on ' + reincGear.length + ' of your items</b>. In-game: drag each equipped item into the Enhance slot and pump refine levels.</div>';
+    if (upCount) html += '<div class="rec-box"><b>Equip upgrades found:</b> ' + upCount + " slot" + (upCount > 1 ? "s" : "") + " have a higher-rated item sitting in your inventory — swap them in.</div>";
+    else if (!lowRefine.length) html += '<div class="rec-box"><b>Gear looks optimal</b> — nothing outrates your equipped items, and your gear is well-refined.</div>';
+    html += '<div class="sys-h">Equipped gear <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(refine multiplier · key affixes)</span></div><div class="rowlist">' + equipped.map(function (eq) {
       var r = eq.TotalItemRating != null ? eq.TotalItemRating : eq.BaseItemRating;
-      var up = upgradeFor[eq.ItemType];
-      return rowItem(null, "Slot type " + eq.ItemType, "Rarity " + eq.ItemRarity + " · refine x" + eq.RefineMulti,
-        "Rating " + bdStr(r) + (up ? ' <span class="flag tip">Upgrade avail</span>' : ""));
+      var key = (eq.BonusList || []).filter(function (b) { return EQ_KEY_AFFIX[b.BonusID]; }).map(function (b) { return EQ_AFFIX[b.BonusID]; });
+      var reinc = (eq.BonusList || []).some(function (b) { return b.BonusID === 12; });
+      var meta = "T" + eq.ItemRarity + " · refine Lv " + (eq.RefineLevel || 0) + " (×" + affixMult(eq).toFixed(2) + " affixes) · " + (eq.BonusList || []).length + " affixes" + (key.length ? " · key: " + key.join(", ") : "");
+      var flag = (reinc ? '<span class="flag good">Reinc-Exp</span> ' : '') + (upgradeFor[eq.ItemType] ? '<span class="flag tip">swap avail</span>' : '');
+      return rowItem(null, "Slot " + eq.ItemType, meta, flag || ("Rating " + bdStr(r)));
     }).join("") + "</div>";
     el.innerHTML = html;
   }
@@ -2119,6 +2133,10 @@
     if (br) {
       out.push({ ic: "🧬", label: "Level Assembly Line #" + br.id + " with Protein", detail: "carries Reinc-Exp ×" + (1 + br.gain).toFixed(2) + "/level · Lv " + br.level + "/" + br.max + " — a manual Protein sink (not automated)", pct: br.gain * 100, goto: "protein" });
     }
+    // Refining equipped gear multiplies its affixes; items with the Reinc-Exp affix (12) are a reinc lever (GetEquipmentBonus(12)).
+    var eqItems = deepFind(PARSED, "EquippedItems") || [], mats2 = deepFind(PARSED, "RefineMaterials") || [], ep2 = toNum(deepFind(PARSED, "EnhancingPower")) || 0.05;
+    var refineReinc = eqItems.filter(function (eq) { return eq && (eq.BonusList || []).some(function (b) { return b.BonusID === 12; }) && (eq.RefineLevel || 0) < 50 && (Number(mats2[eq.ItemRarity]) || 0) > 100; });
+    if (refineReinc.length) out.push({ ic: "⚒️", label: "Refine your Reinc-Exp gear", detail: refineReinc.length + " equipped item" + (refineReinc.length > 1 ? "s" : "") + " with a Reinc-Exp affix " + (refineReinc.length > 1 ? "are" : "is") + " barely refined — each refine level multiplies its affixes by +" + Math.round(ep2 * 100) + "% (incl. reinc-exp), and you have materials to spare", pct: ep2 * 100, goto: "equipment" });
     return out.sort(function (a, b) { return (b.pct || 0) - (a.pct || 0); });
   }
 
