@@ -647,9 +647,44 @@
     <div class="panel-bd" style="padding-top:8px;">
 
       <details class="ref" open>
+        <summary>What each prestige keeps vs resets</summary>
+        <div class="ref-bd">
+          <p>The game scatters these rules across tooltips — here they are in one place. <b>✓ kept · ✗ reset/lost · —</b> n/a. Decompiled + from the in-game guide.</p>
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>Thing</th><th>Reincarnate</th><th>Ascend</th><th>Transcend</th></tr></thead>
+              <tbody>
+                <tr><th>World / wave progress</th><td>✗</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Class levels</th><td>✗</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Talent points (respec)</th><td>✗</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Reincarnation level</th><td>—</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Reinc Points &amp; RP-shop upgrades</th><td>✓</td><td>✓</td><td>✗*</td></tr>
+                <tr><th>Reinc Shop layers</th><td>✓</td><td>✓ (1 kept per ascension)</td><td>✗*</td></tr>
+                <tr><th>Worm Larva</th><td>✓</td><td>✓</td><td>✗*</td></tr>
+                <tr><th>Worm Poop allocation</th><td>✗</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Farm &amp; Seed</th><td>✓</td><td>✓</td><td>✗*</td></tr>
+                <tr><th>Cow Factory / Residue / Milk</th><td>✓</td><td>✓</td><td>✗*</td></tr>
+                <tr><th>Pet <b>Level</b> (main-game bonuses)</th><td>—</td><td>✗</td><td>✓</td></tr>
+                <tr><th>Pet <b>Rank</b> (expedition power)</th><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><th>Pets captured &amp; Promotions</th><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><th>Card <b>Temporary</b> Power &amp; Level</th><td>—</td><td>✗</td><td>✗</td></tr>
+                <tr><th>Card <b>Permanent</b> Power</th><td>✓</td><td>✓</td><td>✗*</td></tr>
+                <tr><th>Expeditions (unlock / Rank / Shop)</th><td>✓</td><td>✓</td><td>✓ unlock</td></tr>
+                <tr><th>Challenge perma-clears</th><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><th>Soul Shop &amp; Souls</th><td>✓</td><td>✓</td><td>✓</td></tr>
+                <tr><th>Gems / Jewel</th><td>—</td><td>—</td><td>partial (keep a portion)</td></tr>
+                <tr><th>Ascension count</th><td>—</td><td>+1</td><td>✗ → 0</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:10px;font-size:12.5px;font-style:italic;">*Transcendence resets <b>almost everything</b> — only pets/promotions, Soul Shop, QoL upgrades and a portion of gems survive. The ✗* rows are things that persist through Reincarnate/Ascend but are wiped by a Transcend.</p>
+        </div>
+      </details>
+
+      <details class="ref">
         <summary>Seed Shop — buy order</summary>
         <div class="ref-bd">
-          <p>The Seed Shop is a major T3 lever. Community-recommended purchase order:</p>
+          <p>The Seed Shop opens with the <b>Portal (A20)</b> — mega seeds fund it — and stays a major lever through Transcendence. Community-recommended purchase order:</p>
           <ol class="ord">
             <li><b>Auto-seed system</b> — automate seeding first; everything downstream leans on it.</li>
             <li><b>Item Rarity (HS)</b> — big multiplier on gear quality.</li>
@@ -663,11 +698,11 @@
       <details class="ref">
         <summary>Classes &amp; talent order</summary>
         <div class="ref-bd">
-          <p>All <b>7 classes</b> — Farmer, Hoer, Smasher, Digger, Rancher, Harvester, Freeloader. Levels in <em>every</em> class grant talent points for your <em>current</em> class, so <b>level them in parallel</b>. You gain a talent point per 10 levels, plus a permanent +1 the first time each class crosses a multiple of 100 (re-granted every Reincarnation).</p>
+          <p>All <b>6 classes</b> — Farmer, Smasher, Hoer, Harvester, Rancher, Freeloader. Levels in <em>every</em> class grant talent points for your <em>current</em> class, so <b>level them in parallel</b>. You gain a talent point per <b>10 levels of your current class</b>, plus a permanent one per <b>100 levels</b> of each class's highest-ever level (re-granted every Reincarnation).</p>
           <ul class="rules">
             <li><b>Talent tree order:</b> Freeloader first (raises equipment levels), then <b>Smasher &gt; Hoer &gt; Farmer &gt; Freeloader</b>.</li>
             <li><b>Keystone rotation:</b> Harvester (worm find), Rancher (+milk), Freeloader (protein / equipment).</li>
-            <li><b>A55+ role split:</b> Digger &rarr; Seed Shop / mining · Farmer &rarr; gem farming · Rancher &rarr; world stages · Freeloader &rarr; Protein.</li>
+            <li><b>Subclasses (A50+):</b> each class has a separate subclass that levels in the Portal; at subclass level 750 you earn subclass talent points. Only your <em>active</em> class's subclass talents are live, so push the class you run most.</li>
           </ul>
         </div>
       </details>
@@ -828,27 +863,64 @@
       ]
     },
     {
-      key: "t2", tier: "T2", ascMin: 1, ascMax: 6, label: "Ascension Opens", range: "T2 · A1–A6",
-      focus: ["Ascension", "RP", "Challenges"],
+      key: "t2-open", tier: "T2", ascMin: 1, ascMax: 11, label: "Ascension Opens", range: "T2 · A1–A11",
+      focus: ["Ascension", "RP", "Cards", "Challenges"],
       actions: [
-        { t: "Buy cows after each Ascension", sys: "Residue", why: "Milk/residue scaling is a core account-wide multiplier — refresh cows every ascension." },
-        { t: "Work through Reincarnation Point (RP) upgrades", sys: "RP", why: "RP upgrades are permanent power you carry into Transcendence." },
-        { t: "Clear the early Challenges (C1–C7)", sys: "Challenges", why: "Each challenge unlocks lasting bonuses and gates later content." },
-        { t: "Rotate Harvester / Rancher / Freeloader for their keystones", sys: "Classes", why: "Harvester boosts worm find, Rancher gives +milk nodes, Freeloader boosts equipment/protein." },
-        { t: "Keep pushing world stages and class levels toward Transcendence", sys: "Progression", why: "Transcendence (T3) is the next tier — build the raw stats to reach it." }
+        { t: "Buy cows after each Ascension", sys: "Residue", why: "Milk/residue scaling is a core account-wide multiplier — refresh cows every ascension (auto-restores free from A10)." },
+        { t: "Work through Reincarnation Point (RP) upgrades", sys: "RP", why: "RP upgrades are permanent power that survives ascension (and later Transcendence)." },
+        { t: "Charge the Reincarnation card once Cards unlock (A6)", sys: "Cards", why: "Cards unlock at Ascension 6; the Reincarnation card is a direct reinc-exp multiplier — spend Charges on it." },
+        { t: "Clear the early Challenges (C1–C7)", sys: "Challenges", why: "Each challenge unlocks lasting bonuses and flat Reincarnation Points, and gates later content." },
+        { t: "Keep all classes leveling in parallel; rotate for keystones", sys: "Classes", why: "Total class level is the #1 reinc-exp term, and every class's levels grant talent points for your current class." }
       ]
     },
     {
-      key: "t2-deep", tier: "T2", ascMin: 7, ascMax: 999, label: "Deep Ascension", range: "T2 · A7+ · pre-Transcendence",
-      focus: ["Portal", "Seed Shop", "Toward Transcendence"],
+      key: "t2-town", tier: "T2", ascMin: 12, ascMax: 19, label: "Town & Buildings", range: "T2 · A12–A19",
+      focus: ["Outpost", "Buildings", "Reinc-Exp"],
       actions: [
-        { t: "Push your Portal floor — it's your main multiplier engine", sys: "Portal", why: "Portals drive seed income and the bulk of your late-T2 power. Keep auto-floor climbing and keep buying portal-shop levels." },
-        { t: "Follow the Seed Shop buy order (auto-seed → item rarity → …)", sys: "Seed Shop", why: "See the reference below: auto-seed first, then Item Rarity, then subclass EXP / portal HP–ATK reductions." },
-        { t: "Buy cows after every Ascension", sys: "Residue", why: "Milk/residue scaling is a core account-wide multiplier — refresh cows each ascension." },
-        { t: "Keep all 10 Challenges perma-cleared", sys: "Challenges", why: "Challenge perma-clears are permanent power — make sure none lapse." },
-        { t: "Bank Reincarnation Points and buy RP upgrades", sys: "RP", why: "RP upgrades are permanent and carry through Transcendence." },
-        { t: "Run long expeditions for tokens and gems", sys: "Expeditions", why: "Expedition tokens and gems fuel the next tier — keep long runs going." },
-        { t: "Build toward unlocking Transcendence (the Soul layer)", sys: "Transcendence", why: "Transcendence is your next big prestige — it unlocks Souls and the Soul shop, and opens the T3 roadmap." }
+        { t: "Level the After Life Altar building first", sys: "Buildings", why: "Outpost/Miner/Town unlock at A12. The After Life Altar directly multiplies reincarnation-exp — your biggest building lever." },
+        { t: "Mine for resources, build the multiplier buildings, grow Renown", sys: "Outpost", why: "Renown (from Trade Center trading) multiplies every building — it's a compounding account-wide boost." },
+        { t: "Keep cows, RP and challenges going", sys: "Residue", why: "Don't let the A1–A11 habits lapse — they're still your base multipliers." },
+        { t: "Push stages and class levels toward Portal at A20", sys: "Progression", why: "Portal (A20) is the next major engine — build the depth to reach it." }
+      ]
+    },
+    {
+      key: "t2-portal", tier: "T2", ascMin: 20, ascMax: 29, label: "Portal Online", range: "T2 · A20–A29",
+      focus: ["Portal", "Seed Shop", "Subclass"],
+      actions: [
+        { t: "Push Portal floors — it's now your main multiplier engine", sys: "Portal", why: "Portal unlocks at A20. It drives subclass EXP, seed income and the bulk of your power from here on." },
+        { t: "Follow the Seed Shop buy order (auto-seed → Item Rarity → …)", sys: "Seed Shop", why: "Mega-seed upgrades open with the Portal (not Transcendence). Auto-seed first, then Item Rarity, then subclass EXP / portal HP–ATK reductions." },
+        { t: "Start leveling subclasses in the portal toward 750", sys: "Subclass", why: "Subclass level 750 unlocks subclass talent points (at A50) — begin the climb now." },
+        { t: "Run long expeditions for tokens and Reinc Points", sys: "Expeditions", why: "Expedition hours also discount your ascension requirement — keep all 8 teams running." }
+      ]
+    },
+    {
+      key: "t2-swp", tier: "T2", ascMin: 30, ascMax: 39, label: "Sweet Potato", range: "T2 · A30–A39",
+      focus: ["Sweet Potato", "Reinc-Exp", "Portal"],
+      actions: [
+        { t: "Adjust to the Sweet Potato evolution (A30)", sys: "Sweet Potato", why: "At A30 potatoes evolve into Sweet Potatoes — most potato upgrades vanish/average out, and the Potato talent node expires. Killing potatoes now gives Sweet Potato." },
+        { t: "Buy Ascension Requirement Reduction in the Sweet-Potato shop", sys: "Sweet Potato", why: "It directly lowers the reinc level you need to ascend — your #1 Sweet-Potato buy." },
+        { t: "Stop leveling the combat Reinc-Exp upgrade", sys: "Perks", why: "It flat-caps to ×1,200 at A30 — leveling it further does nothing. Put the points elsewhere." },
+        { t: "Keep Portal + Seed Shop as the engine", sys: "Portal", why: "Portal progression stays your top multiplier source through this band." }
+      ]
+    },
+    {
+      key: "t2-skp", tier: "T2", ascMin: 40, ascMax: 49, label: "Skull Powder", range: "T2 · A40–A49",
+      focus: ["Skull Powder", "Reinc-Exp", "Portal"],
+      actions: [
+        { t: "Adjust to the Skull Powder evolution (A40)", sys: "Perks", why: "At A40 skulls evolve into Skull Powder — most skull upgrades vanish/average out, and the Death-Perk talent node expires. Clearing an area now gives Skull Powder." },
+        { t: "Stop leveling the Skull Reinc-Exp perk — pour skulls into Attack/HP", sys: "Perks", why: "The Reinc-Exp perk is now a flat ×1,000,000 regardless of level. Spend skulls on combat depth instead." },
+        { t: "Keep pushing Portal and subclasses toward 750", sys: "Portal", why: "Subclass 750 is the gate for subclass talents at A50 — keep climbing." },
+        { t: "Bank RP and keep all 10 challenges perma-cleared", sys: "RP", why: "Permanent power that carries through Transcendence — don't let any challenge lapse." }
+      ]
+    },
+    {
+      key: "t2-sub", tier: "T2", ascMin: 50, ascMax: 999, label: "Subclass & Transcend Push", range: "T2 · A50–A64 → Transcend A65",
+      focus: ["Subclass Talents", "Portal", "Toward Transcendence"],
+      actions: [
+        { t: "Allocate your Subclass Talent points (unlocked A50)", sys: "Talents", why: "At subclass level 750 you earn a talent point every 15 levels. Only your active class's subclass talents work — spend them on the class you run most." },
+        { t: "Push ascensions toward A65 to unlock Transcendence", sys: "Transcendence", why: "The menu appears at A60, but you can't actually Transcend until Ascension 65 (then +2 each future Transcendence)." },
+        { t: "Keep 12-hour expeditions and the portal climb going", sys: "Expeditions", why: "Expedition hours discount your ascension requirement and feed tokens/pets; portal is still the engine." },
+        { t: "Prep your first Transcendence", sys: "Transcendence", why: "Transcending resets almost everything EXCEPT pets/promotions, the Soul Shop, QoL upgrades, and a portion of gems. Bank RP and finish any one-time levers first." }
       ]
     },
     {
@@ -942,13 +1014,12 @@
   // Which phase does the current tier + ascension recommend?
   function recommendedKey() {
     if (state.tier === "T1") return (state.reinc >= 1) ? "t1-loop" : "t1-start";
-    if (state.tier === "T2") return (state.asc >= 7) ? "t2-deep" : "t2";
-    // T3 — pick by ascension
+    // T2 & T3 — pick the ascension-banded phase for the current tier
     for (var i = 0; i < PHASES.length; i++) {
       var p = PHASES[i];
-      if (p.tier === "T3" && state.asc >= p.ascMin && state.asc <= p.ascMax) return p.key;
+      if (p.tier === state.tier && p.ascMin != null && state.asc >= p.ascMin && state.asc <= p.ascMax) return p.key;
     }
-    return "t3-early";
+    return state.tier === "T2" ? "t2-open" : "t3-early";
   }
 
   function doneCount(p) {
@@ -970,7 +1041,9 @@
   function renderTimeline() {
     var rec = recommendedKey();
     elTimeline.innerHTML = "";
-    PHASES.forEach(function (p, idx) {
+    // Show only the current tier's phases, so each tier reads as a coherent sequence.
+    var shown = PHASES.filter(function (p) { return p.tier === state.tier; });
+    shown.forEach(function (p, idx) {
       var chip = document.createElement("button");
       chip.className = "phase-chip";
       chip.setAttribute("aria-selected", p.key === state.selected ? "true" : "false");
@@ -1056,7 +1129,7 @@
     } else {
       ascRow.classList.remove("disabled");
       ascHint.textContent = state.tier === "T2"
-        ? "Your Ascension count. A7+ unlocks the Deep Ascension plan."
+        ? "Your Ascension count. Phases shift at A12 / A20 / A30 / A40 / A50; Transcend unlocks at A65."
         : "Post-Transcendence ascension. Phases shift ~A7 / A20 / A30 / A55 / A66.";
     }
   }
@@ -1768,6 +1841,32 @@
       '<li><b>Keystone rotation:</b> Harvester (worm find), Rancher (+milk), Freeloader (protein / equipment).</li>' +
       '<li><b>While pushing Ascension:</b> prioritise the Reincarnation nodes and any Giant nodes that boost reinc-exp — they\'re direct ascension multipliers.</li>' +
       '</ul>';
+
+    // ---- Expired talent nodes (decompiled: nodes die at the evolution gates) ----
+    var ascN = saNum("AscensionCount");
+    if (ascN >= 30) {
+      var dead = [];
+      if (ascN >= 30) dead.push("the <b>Potato</b> node (expired at A30, Sweet-Potato evolution)");
+      if (ascN >= 40) dead.push("the <b>Death-Perk</b> node (expired at A40, Skull-Powder evolution)");
+      html += '<div class="rec-box" style="border-color:var(--gold)"><b>⚠ Expired nodes:</b> ' + dead.join(" and ") + ' now give <b>0%</b> — the game marks them "Expired". Don\'t waste points there; put them in base-stat and reinc nodes instead.</div>';
+    }
+
+    // ---- Subclass Talents (A50 / subclass level 750+) ----
+    var subLv = deepFind(PARSED, "SubClassLevel");
+    if (Array.isArray(subLv) && subLv.some(function (l) { return (toNum(l) || 0) >= 750; })) {
+      // subClassNames (decompiled): index 0 = Global; the 6 base classes' subclasses follow in order.
+      var SUBNAMES = ["Agronomist", "Demolisher", "Digger", "Reaper", "Cowboy", "Scrounger"];
+      var rows = "", totalPts = 0;
+      subLv.forEach(function (l, i) {
+        var lv = toNum(l) || 0; if (i >= 6) return;
+        var pts = lv >= 750 ? Math.floor((lv - 735) / 15) : 0; totalPts += pts;
+        var name = SUBNAMES[i] || ("Subclass " + (i + 1));
+        rows += rowItem(null, name, "subclass level " + fmtNum(lv) + (lv >= 750 ? "" : " · needs 750 to earn points"), lv >= 750 ? ('<span class="flag good">' + pts + ' pts</span>') : '<span class="flag warn">locked</span>');
+      });
+      html += '<div class="sys-h">Subclass Talents <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(unlocked A50)</span></div>';
+      html += '<p class="sys-note">A second talent layer that unlocks at <b>Ascension 50</b>. Each base class has a subclass that levels <b>in the Portal</b>; once a subclass hits <b>level 750</b> it earns a talent point every <b>15</b> levels. <b>Only your active class\'s subclass talents are live</b>, so pour points into the subclass of the class you actually run, and switch the active class to match what you\'re doing. You\'ve earned <b>~' + fmtNum(totalPts) + ' subclass talent points</b> across your subclasses:</p>';
+      html += '<div class="rowlist">' + rows + '</div>';
+    }
     el.innerHTML = html;
   }
 
@@ -2200,8 +2299,13 @@
       ["Souls spent", fmtNum(toNum(deepFind(PARSED, "SpentSoul")))],
       ["Ascension", fmtNum(toNum(deepFind(PARSED, "AscensionCount")))]
     ]);
-    html += '<p class="sys-note">Transcendence is the T3 prestige — it unlocks the Soul economy and the Soul Shop of permanent perks, and opens the A7–A71 endgame roadmap.</p>';
-    if (tc < 1) html += '<div class="rec-box"><b>You haven\'t Transcended yet</b> — this is your next big milestone. Lock in the key Seed Shop upgrades and push your portal floor, then Transcend to start the Soul layer.</div>';
+    var ascNow = toNum(deepFind(PARSED, "AscensionCount")) || 0;
+    var transReq = 65 + tc * 2; // decompiled: AscensionCount >= 65 + Transcendence*2 (Transcendence.cs)
+    html += '<p class="sys-note">Transcendence is the T3 prestige — it unlocks the Soul economy &amp; Soul Shop, the Generator, the Jewel/Gems and Artifacts. <b>You can Transcend at Ascension ' + transReq + '</b> (the menu appears at A60, but Transcend itself requires A' + transReq + '; then +2 for each further Transcendence, max 5). Transcending resets almost everything except pets/promotions, the Soul Shop, QoL and a portion of gems.</p>';
+    if (tc < 1) {
+      if (ascNow >= transReq) html += '<div class="rec-box" style="border-color:var(--gold)"><b>You can Transcend now (A' + ascNow + ' ≥ A' + transReq + ').</b> Finish any one-time levers and make sure no expeditions are running, then Transcend to open the Soul layer.</div>';
+      else html += '<div class="rec-box"><b>You haven\'t Transcended yet</b> — it\'s your next big milestone, but you need <b>Ascension ' + transReq + '</b> and you\'re at <b>A' + ascNow + '</b> (<b>' + (transReq - ascNow) + ' ascension' + (transReq - ascNow === 1 ? "" : "s") + ' to go</b>). Keep pushing the Portal + Seed Shop and your reinc-exp levers to climb ascensions faster. The Seed Shop is already open (it came with the Portal at A20) — keep buying it.</div>';
+    }
     else html += '<div class="rec-box"><b>Spend your Souls in the Soul Shop</b> on permanent perks, then follow the Roadmap through the post-Transcendence ascension bands.</div>';
 
     var arl = toNum(deepFind(PARSED, "ReincarnationLevel")), areq = toNum(deepFind(PARSED, "AscensionReincLevelRequired"));
@@ -2458,9 +2562,9 @@
   // ---- Save-gated unlock system (decompiled from ShowUnlock.cs — the game's own SA*Unlock flags) ----
   function saNum(k) { return toNum(deepFind(PARSED, k)) || 0; }
   var SECTION_GATE = {
-    sweetpotato:   { flag: "SAAscensionUnlock", at: "Ascension (reach World 26)" },
-    transcendence: { test: function () { return saNum("Transcendence") > 0 || saNum("AscensionCount") >= 60; }, at: "Ascension 60" },
-    seedshop:      { test: function () { return saNum("Transcendence") > 0; }, at: "Transcend (T3)" },
+    sweetpotato:   { test: function () { return saNum("Transcendence") > 0 || saNum("AscensionCount") >= 30; }, at: "Ascension 30 (potatoes evolve)" },
+    transcendence: { test: function () { return saNum("Transcendence") > 0 || saNum("AscensionCount") >= 60; }, at: "Ascension 60 (menu); Transcend at A65" },
+    seedshop:      { test: function () { return saNum("Transcendence") > 0 || saNum("SAPortalUnlock") === 1 || saNum("AscensionCount") >= 20; }, at: "Ascension 20 (Portal / mega seeds)" },
     expeditions:   { flag: "SAExpeditionUnlock", at: "Ascension 3" },
     pets:          { flag: "SAPetUnlock", at: "World Area 20" },
     cards:         { flag: "SACardUnlock", at: "Ascension 6" },
@@ -2579,12 +2683,12 @@
     { key: "p2", name: "Phase 2 — Reincarnation loop", range: "Reincarnating · before Ascension", lo: 0, hi: 0 },
     { key: "p3", name: "Phase 3 — Early Ascension", range: "Ascension 1–11", lo: 1, hi: 11 },
     { key: "p4", name: "Phase 4 — Mid Ascension", range: "Ascension 12–29", lo: 12, hi: 29 },
-    { key: "p5", name: "Phase 5 — Late Ascension", range: "Ascension 30–59", lo: 30, hi: 59 },
-    { key: "p6", name: "Phase 6 — Transcendence (T3)", range: "Ascension 60+ · Souls & Artifacts", lo: 60, hi: 9999 }
+    { key: "p5", name: "Phase 5 — Late Ascension", range: "Ascension 30–64 · evolutions + Transcend push", lo: 30, hi: 64 },
+    { key: "p6", name: "Phase 6 — Transcendence (T3)", range: "Transcend at A65 · Souls & Artifacts", lo: 65, hi: 9999 }
   ];
   function walkPhaseFor(asc, transc) {
     if (transc > 0) return "p6";
-    if (asc >= 60) return "p6"; if (asc >= 30) return "p5"; if (asc >= 12) return "p4"; if (asc >= 1) return "p3";
+    if (asc >= 65) return "p6"; if (asc >= 30) return "p5"; if (asc >= 12) return "p4"; if (asc >= 1) return "p3";
     return "p2"; // reincarnating but not ascended; p1 can't be detected from an imported save (always past it)
   }
   function renderWalkthrough() {
@@ -2633,13 +2737,15 @@
       ["Reincarnate (Area 8)", "Reincarnation + its Shop", "your first real prestige loop"],
       ["10 billion fries", "Protein / Assembly Lines", "big multiplier lines (incl. #20 = reinc-exp)"],
       ["Area 20", "Pets", "capture pets for expeditions"],
-      ["Area 26 / first Ascend", "Ascension + Sweet Potato", "the main prestige + its upgrade shop"],
+      ["Area 26 / first Ascend", "Ascension", "the main prestige layer"],
       ["Ascension 3", "Expeditions & Zones", "passive pet income + auto-clears old areas"],
       ["Ascension 6", "Cards", "chargeable permanent multipliers"],
       ["Ascension 12", "Outposts + Town Buildings", "minerals → building bonuses (incl. After Life Altar)"],
-      ["Ascension 20", "Portal", "a major multiplier engine"],
-      ["Ascension 50", "Subclass Talents", "deeper talent tree"],
-      ["Ascension 60", "Transcendence (T3)", "Souls, Artifacts, Seed Shop — the endgame"]
+      ["Ascension 20", "Portal + Seed Shop", "a major multiplier engine; mega seeds fund the Seed Shop"],
+      ["Ascension 30", "Sweet Potato", "potatoes evolve — old potato upgrades average out; Potato talent node expires"],
+      ["Ascension 40", "Skull Powder", "skulls evolve — Reinc-Exp Skull perk flat-caps; Death-Perk talent node expires"],
+      ["Ascension 50", "Subclass Talents", "subclass lvl 750 → a talent point every 15 levels"],
+      ["Ascension 65", "Transcendence (T3)", "menu shows at A60, Transcend at A65 — Souls, Artifacts, Jewel/Gems"]
     ];
     H.push('<div class="rowlist">' + GATES.map(function (g) {
       return rowItem(null, g[1], g[2], '<span class="flag tip">' + esc(g[0]) + '</span>');
@@ -2674,20 +2780,20 @@
        "Level the <b>Reinc-Exp Assembly Lines</b> (the ones carrying bonus “Reinc-Exp”, e.g. #29/#25/#22) with Protein — a manual lever, unlike the auto lines.",
        "<b>Ascension 20 → Portal:</b> keep the auto-floor climbing and buy portal-shop levels; from here Portal beats world farming.",
        "<b>Buy cows after every ascension</b> — residue/milk both multiplies and discounts the requirement."]));
-    H.push(phase("Phase 5 — Late Ascension", "Ascension 30–59",
-      "Two big economy evolutions hit here, and your reinc levers shift. Push toward Transcendence.",
+    H.push(phase("Phase 5 — Late Ascension", "Ascension 30–64",
+      "Two big economy evolutions hit here, and your reinc levers shift. Push toward Transcendence at A65.",
       ["<b>Ascension 30 → Potatoes evolve into Sweet Potatoes</b>; <b>Ascension 40 → Skulls evolve into Skull Powder</b> — the old currencies/upgrades are replaced (which is why the Reinc-Exp Skull perk and combat reinc upgrade <b>flat-cap</b> at A40/A30: stop leveling them).",
        "Keep the reinc levers that still scale: After Life Altar, Reinc card, the 12 Giant Nodes, the <b>Reinc-Exp Assembly Lines</b>, cows (auto from A10).",
        "Sweet-Potato <b>ascension-gated tiers unlock every 2 ascensions</b> (32 → 44); buy each the moment it opens.",
        "<b>Ascension 50 → Subclass Talents</b> (subclass level 750, points every 15 levels).",
        "Clear <b>Challenges</b> when you can — each keeps a permanent reward + flat Reinc Points, and <b>Challenge 8 permanently doubles your reinc-exp bonus</b>."]));
-    H.push(phase("Phase 6 — Transcendence (T3)", "Ascension 60+ · the endgame",
-      "At Ascension 60 you can Transcend — a T3 prestige that opens the Soul economy, Artifacts, and the Seed Shop.",
-      ["<b>Transcending keeps</b> pets/promotions, the Soul Shop, and some QoL — but resets almost everything else, far harder than an ascension.",
-       "Spend <b>Souls</b> in the Soul Shop (Auto-Quest Completer and QoL first), and lock in <b>Seed Shop</b>: Auto-seed → Item Rarity → Portal HP/ATK reduction.",
-       "<b>The Generator</b> grows stronger with time and each ascension (full potential after several weeks) — keep ascending to ramp it.",
-       "<b>Jewel &amp; Gems:</b> upgrade the Jewel for sockets + gem power; gems drop in Eternal-difficulty zones, Portals, Expeditions, and farming — build loadouts and swap freely.",
-       "From here it's the A60→A71+ endgame band: the same gain ÷ need loop, now with Soul, Generator, Jewel and Artifact multipliers layered on top."]));
+    H.push(phase("Phase 6 — Transcendence (T3)", "Transcend at A65 · the endgame",
+      "The Transcend menu appears at A60, but you can't actually Transcend until Ascension 65 (then +2 per future Transcendence, max 5). It's a T3 prestige that opens the Soul economy, Artifacts, the Generator and the Jewel.",
+      ["<b>Transcending keeps</b> pets/promotions, the Soul Shop, QoL upgrades, and a portion of your gems — but resets almost everything else (including ascension count back to 0), far harder than an ascension.",
+       "Spend <b>Souls</b> in the Soul Shop (Auto-Quest Completer and QoL first). Keep buying the <b>Seed Shop</b> (already open since Portal/A20): Auto-seed → Item Rarity → Portal HP/ATK reduction.",
+       "<b>The Generator</b> (new at Transcendence) grows stronger with time and each ascension (full potential after several weeks) — keep ascending to ramp it.",
+       "<b>Jewel &amp; Gems</b> (new at Transcendence): upgrade the Jewel for sockets + gem power; gems drop in Eternal-difficulty zones, Portals, Expeditions, and farming — build loadouts and swap freely. You keep a portion of gems through each Transcendence.",
+       "From here you re-climb ascensions (now with Soul, Generator, Jewel and Artifact multipliers on top), transcending again at A67, A69, A71, A73."]));
 
     // AUTOMATION
     H.push('<div class="sys-h">Leave these alone — they run themselves</div>');
