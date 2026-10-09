@@ -908,7 +908,7 @@
       focus: ["Skull Powder", "Reinc-Exp", "Portal"],
       actions: [
         { t: "Adjust to the Skull Powder evolution (A40)", sys: "Perks", why: "At A40 skulls evolve into Skull Powder — most skull upgrades vanish/average out, and the Death-Perk talent node expires. Clearing an area now gives Skull Powder." },
-        { t: "Stop leveling the Skull Reinc-Exp perk — pour skulls into Attack/HP", sys: "Perks", why: "The Reinc-Exp perk is now a flat ×1,000,000 regardless of level. Spend skulls on combat depth instead." },
+        { t: "Stop leveling the skull perks — Reinc-Exp, Attack and HP all cap at A40", sys: "Perks", why: "Decompiled: at A40 the Reinc-Exp perk is a flat ×1,000,000 and Attack/HP are flat ×100,000,000 each. Leveling them past A40 does nothing — combat now scales through reinc level, per-ascension multipliers, Reinc Page 3, portal, worms, cards and gems." },
         { t: "Keep pushing Portal and subclasses toward 750", sys: "Portal", why: "Subclass 750 is the gate for subclass talents at A50 — keep climbing." },
         { t: "Bank RP and keep all 10 challenges perma-cleared", sys: "RP", why: "Permanent power that carries through Transcendence — don't let any challenge lapse." }
       ]
@@ -1805,10 +1805,10 @@
       ["HP perk", fmtNum(toNum(deepFind(PARSED, "PerkHPRegenLevel")))],
       ["Reinc-Exp perk", fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")))]
     ]);
-    html += '<p class="sys-note">The Skull shop — permanent combat perks bought with Skulls (decompiled from BattleDeathUpgrade). <b>This is your core damage engine:</b> more Attack/HP → clear deeper → more Waves & Class levels → more reincarnation-exp → Ascend. Skulls are effectively unlimited vs cost, so use <b>One-Click Buy Max</b> — the question is priority.</p>';
+    html += '<p class="sys-note">The Skull shop — permanent combat perks bought with Skulls (decompiled from BattleDeathUpgrade). Through the early game it\'s your core damage engine: more Attack/HP → clear deeper → more Waves &amp; Class levels → more reincarnation-exp → Ascend. <b>But the big perks flat-cap at Ascension 40</b> (see below), so this engine is an <em>early-game</em> lever. Skulls are effectively unlimited vs cost, so use <b>One-Click Buy Max</b> — the question is priority.</p>';
     var pAsc = saNum("AscensionCount");
-    if (pAsc < 40) html += '<div class="rec-box"><b>Priority:</b> max <b>Reincarnation Exp</b> ⭐ (a direct ascension multiplier) <b>until Ascension 40</b> — then it becomes a flat ×1,000,000 and leveling it stops mattering. Also max <b>Attack</b> &amp; <b>HP</b> for combat depth. Attack Speed / Crit / Evade cap — level to the cap and leave them.</div>';
-    else html += '<div class="rec-box" style="border-color:var(--gold)"><b>Priority (Ascension 40+):</b> the <b>Reincarnation-Exp perk is now a flat ×1,000,000</b> regardless of level — <b>stop leveling it</b> (yours is Lv ' + fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")) || 0) + ', correctly). Pour skulls into <b>Attack</b> &amp; <b>HP</b> for combat depth instead; cap Attack Speed / Crit / Evade and leave them.</div>';
+    if (pAsc < 40) html += '<div class="rec-box"><b>Priority (before Ascension 40):</b> max <b>Reincarnation Exp</b> ⭐, <b>Attack</b> and <b>HP</b> hard now — <b>all three flat-cap at Ascension 40</b> (Reinc-Exp → ×1,000,000; Attack &amp; HP → ×100,000,000 each, decompiled from PlayerStats). Leveling them past A40 does nothing, so bank the value before then. Attack Speed / Crit / Evade cap — level to the cap and leave them.</div>';
+    else html += '<div class="rec-box" style="border-color:var(--gold)"><b>Ascension 40+ — the skull perks are capped out.</b> <b>Reincarnation-Exp</b> is a flat ×1,000,000, and <b>Attack</b> &amp; <b>HP</b> are flat ×100,000,000 each regardless of level (decompiled) — leveling any of them is <b>wasted</b> (yours: Reinc-Exp Lv ' + fmtNum(toNum(deepFind(PARSED, "PerkReincarnationExpLevel")) || 0) + ', Atk Lv ' + fmtNum(toNum(deepFind(PARSED, "PerkAtkLevel")) || 0) + ', HP Lv ' + fmtNum(toNum(deepFind(PARSED, "PerkHPRegenLevel")) || 0) + '). Skulls have evolved into <b>Skull Powder</b> — your combat power now scales through <b>reincarnation level, the per-ascension Attack/HP multipliers, Reincarnation Page 3, Portal/subclass, worms, cards and gems</b>, not this shop. Just keep Attack Speed / Crit / Evade at their caps.</div>';
     html += '<div class="sys-h">Your perks</div><div class="rowlist">' + PERKS.map(function (p) {
       var lv = toNum(deepFind(PARSED, p.f));
       var flag = p.asc ? ' <span class="flag good">Ascension ⭐</span>' : (p.core ? ' <span class="flag tip">Core damage</span>' : "");
@@ -2233,7 +2233,15 @@
     var g = Math.log10(CL) + Math.min(1000, CL) * Math.log10(1.001) + Math.log10(Math.max(1, Math.log(CL) / Math.log(5) - 2)) + Math.log10(Math.max(1, 1 + (CL / 2000 - 0.5))) + Math.log10(1 + bp / 5000);
     var confR = conf / 5e6; g += Math.log10(1 + Math.max(0, Math.min(confR, Math.log2(Math.max(2, confR)) / 2 + 1)));
     g += Math.log10(tb) + rbL10;
-    function req(level) { var L = Math.log10(5 + level * 5); L += Math.min(level, 3000) * Math.log10(Math.min(1.0025, 1.00005 + Math.max(0, level / 500000))); L += Math.max(level - 3000, 0) * Math.log10(1.001); L += Math.log10(1 + Math.max(0, Math.min(1, (level - 1500) / 1000))); return L; }
+    // Level-dependent part of ReincarnationExpRequiredToLevel (decompiled, ReincarnationMain). The game also multiplies this by
+    // level-INDEPENDENT discounts — Residue 0.95^(…·CowShopReincExpReduc), Expedition-hours 0.975^(…·ExpeShopReincExpReducLevel),
+    // each floored at 0.01 — and raises the whole thing to a seed/portal exponent (boniList[6]). Rather than reconstruct those,
+    // we calibrate: the save stores ReincarnationExpRequiredBD = the ACTUAL (discounted) requirement at the current level, so the
+    // gap between it and our level-only req(reincLvl) is exactly that constant offset — apply it across the whole range.
+    function reqBase(level) { var L = Math.log10(5 + level * 5); L += Math.min(level, 3000) * Math.log10(Math.min(1.0025, 1.00005 + Math.max(0, level / 500000))); L += Math.max(level - 3000, 0) * Math.log10(1.001); L += Math.log10(1 + Math.max(0, Math.min(1, (level - 1500) / 1000))); return L; }
+    var actualReqL10 = bdLog10(deepFind(PARSED, "ReincarnationExpRequiredBD"));
+    var offset = (actualReqL10 === -Infinity || actualReqL10 == null) ? 0 : (actualReqL10 - reqBase(reincLvl));
+    function req(level) { return reqBase(level) + offset; }
     var lo = reincLvl, hi = reincLvl * 3 + 10000;
     for (var i = 0; i < 70; i++) { var mid = (lo + hi) / 2; if (req(mid) < g) lo = mid; else hi = mid; }
     var wall = Math.round(lo);
@@ -2725,7 +2733,7 @@
       rowItem(null, "Total Expedition hours", "Cuts it via 0.975^(…) scaled by the Expedition-Shop “Reinc Exp Reduc” upgrade. Just keep 8 expeditions running 24/7.", '<span class="flag good">discount</span>') +
       rowItem(null, "Sweet Potato: Ascension Req. Reduction", "Directly lowers the reinc level you need to ascend — your #1 Sweet-Potato buy.", '<span class="flag good">discount</span>') +
       '</div>');
-    H.push('<p class="sys-note"><b>Reincarnation Points</b> you bank each ascension ≈ <code>(reinc level ÷ 5 + challenge pts) × (ascension # + 1)</code> — so every extra ascension permanently boosts the points from the next, and <b>Challenges add flat points</b>.</p>');
+    H.push('<p class="sys-note"><b>Reincarnation Points</b> = <code>floor(((reinc levels since last ascension) ÷ 5 + challenge pts) × (ascension # + 1) + ascension carryover)</code> (decompiled). Two things to note: points count the reinc levels you\'ve gained <em>since your last ascension</em> (not your total), and the <code>× (ascension # + 1)</code> means every extra ascension permanently boosts the points the next one banks. <b>Challenges add flat points</b> on top.</p>');
 
     // UNLOCK TIMELINE (exact gates)
     H.push('<div class="sys-h">Unlock timeline <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(exact gates from the game)</span></div>');
@@ -2799,7 +2807,7 @@
     H.push('<div class="sys-h">Leave these alone — they run themselves</div>');
     H.push('<p class="sys-note"><b>Worm Breeding, Confection, the Cow Factory, Farming, and Contagion</b> all run on auto-buyers once unlocked. They feed your economy in the background — don\'t spend attention micromanaging them. Your hands belong on the levers above.</p>');
     H.push('<div class="sys-h">Passive bonuses worth knowing (from the in-game guide)</div>');
-    H.push('<p class="sys-note"><b>Achievements</b> grant <b>+0.5% Attack, HP &amp; HP-Regen per Achievement Point</b> — so clearing them is free permanent combat power. <b>Pets</b> grant <b>+1% Attack &amp; HP per ascension for each Pet Captured</b>, so capturing pets compounds. Both are automatic once earned — no upkeep.</p>');
+    H.push('<p class="sys-note"><b>Achievements</b> grant <b>+0.5% Attack, HP &amp; HP-Regen per Achievement Point</b> — so clearing them is free permanent combat power. <b>Pets</b> grant a multiplicative <b>×(1 + 1%×Ascension, capped at ×1.1) to Attack &amp; HP per Pet Captured</b> — so from Ascension 10 on it\'s a flat <b>×1.1 (+10%) per captured pet</b>, compounding across your collection (decompiled from PlayerStats). Both are automatic once earned — no upkeep.</p>');
 
     // CHALLENGES
     H.push('<div class="sys-h">Challenges <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--soil-soft);font-size:12px;">(each keeps a permanent reward + flat Reinc Points)</span></div>');
